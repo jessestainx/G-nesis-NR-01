@@ -77,9 +77,9 @@ export function GenesisOverview() {
         contractsQuery.isLoading ||
         orgsQuery.isLoading
 
-    const contacts = contactsQuery.data ?? []
-    const contracts = contractsQuery.data ?? []
-    const organizations = orgsQuery.data ?? []
+    const contacts = useMemo(() => contactsQuery.data ?? [], [contactsQuery.data])
+    const contracts = useMemo(() => contractsQuery.data ?? [], [contractsQuery.data])
+    const organizations = useMemo(() => orgsQuery.data ?? [], [orgsQuery.data])
     const summary = financeSummary.data
 
     // ─── Derived stats ────────────────────────────────────────────────────────
