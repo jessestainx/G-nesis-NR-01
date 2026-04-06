@@ -1,6 +1,16 @@
 import { Menu, LogOut } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 
+function getInitials(name: string | null | undefined): string {
+    if (!name) return '?'
+    return name
+        .split(' ')
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((w) => w[0].toUpperCase())
+        .join('')
+}
+
 interface HeaderProps {
     onMenuClick: () => void
 }
@@ -23,7 +33,12 @@ export function Header({ onMenuClick }: HeaderProps) {
 
             {/* Right actions */}
             <div className="flex items-center gap-3">
-                <div className="flex flex-col items-end">
+                {/* Avatar */}
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600 text-xs font-semibold text-white">
+                    {getInitials(profile?.name)}
+                </div>
+
+                <div className="hidden flex-col items-end sm:flex">
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                         {profile?.name ?? 'Usuário'}
                     </span>

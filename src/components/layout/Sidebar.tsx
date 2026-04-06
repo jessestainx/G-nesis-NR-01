@@ -7,7 +7,6 @@ import {
     FileText,
     Users,
     TrendingUp,
-    UserCog,
     BadgeCheck,
     X,
     AlertTriangle,
@@ -15,6 +14,8 @@ import {
     Activity,
     Lock,
     ShieldAlert,
+    UserCircle2,
+    History,
 } from 'lucide-react'
 import type { UserRole } from '@/types'
 
@@ -27,9 +28,12 @@ interface NavItem {
 const genesisNav: NavItem[] = [
     { label: 'Visão Geral', to: '/dashboard/genesis', icon: LayoutDashboard },
     { label: 'Organizações', to: '/dashboard/genesis/organizations', icon: Building2 },
+    { label: 'Usuários', to: '/dashboard/genesis/users', icon: UserCircle2 },
+    { label: 'Diagnósticos', to: '/dashboard/genesis/diagnosis', icon: ClipboardCheck },
+    { label: 'Planos de Ação', to: '/dashboard/genesis/action-plans', icon: BadgeCheck },
     { label: 'CRM', to: '/dashboard/genesis/crm', icon: Users },
     { label: 'Financeiro', to: '/dashboard/genesis/finance', icon: TrendingUp },
-    { label: 'Consultores', to: '/dashboard/genesis/consultants', icon: UserCog },
+    { label: 'Auditoria', to: '/dashboard/genesis/audit', icon: History },
 ]
 
 const clientExecutiveNav: NavItem[] = [
@@ -78,11 +82,19 @@ function SidebarContent({ role, onClose }: { role: UserRole; onClose: () => void
     return (
         <>
             {/* Logo */}
-            <div className="flex h-16 items-center justify-between px-6">
-                <span className="text-lg font-bold text-indigo-600">Gênesis NR-01</span>
+            <div className="flex h-16 items-center justify-between px-4 border-b border-gray-100 dark:border-gray-800">
+                <div className="flex items-center gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600">
+                        <span className="text-xs font-bold text-white">GN</span>
+                    </div>
+                    <div>
+                        <p className="text-sm font-bold leading-tight text-gray-900 dark:text-white">Gênesis</p>
+                        <p className="text-xs leading-tight text-indigo-600 dark:text-indigo-400">NR-01</p>
+                    </div>
+                </div>
                 <button
                     onClick={onClose}
-                    className="lg:hidden rounded-md p-1 text-gray-500 hover:bg-gray-100"
+                    className="lg:hidden rounded-md p-1 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
                     aria-label="Fechar menu"
                 >
                     <X className="h-5 w-5" />
