@@ -1,58 +1,63 @@
 import { documentRepository } from '@/repositories/document.repository'
 import { auditRepository } from '@/repositories/audit.repository'
-import type { QueryResult, QueryListResult } from '@/repositories/base.repository'
 import type { Document } from '@/types'
+import type { QueryListResult, QueryResult } from '@/repositories/base.repository'
 
 export const documentService = {
-  listByOrganization(orgId: string): Promise<QueryListResult<Document>> {
-    return documentRepository.findByOrganization(orgId)
-  },
+    async listByOrganization(organizationId: string): Promise<QueryListResult<Document>> {
+        return documentRepository.findByOrganization(organizationId)
+    },
 
-  listByType(orgId: string, type: string): Promise<QueryListResult<Document>> {
-    return documentRepository.findByType(orgId, type)
-  },
+    async listByType(organizationId: string, type: string): Promise<QueryListResult<Document>> {
+        return documentRepository.findByType(organizationId, type)
+    },
 
-  async upload(
-    params: {
-      file: File
-      organizationId: string
-      type: string
-      uploadedBy: string
-    }
-  ): Promise<QueryResult<Document>> {
-    const result = await documentRepository.upload(params)
+    async upload(
+        params: {
+            file: File
+            organizationId: string
+            type: string
+            uploadedBy: string
+        },
+        actorId: string,
+    ): Promise<QueryResult<Document>> {
+        const result = await documentRepository.upload(params)
+        if (result.data) {
+            await auditRepository.log({
+                userId: actorId,
+                action: 'document.upload',
+                entityType: 'documents',
+                entityId: result.data.id,
+                organizationId: params.organizationId,
+                metadata: { type: params.type, name: params.file.name },
+            })
+        }
+        return result
+    },
 
-    if (result.data) {
-      await auditRepository.log({
-        userId: params.uploadedBy,
-        action: 'document.upload',
-        entityType: 'documents',
-        entityId: result.data.id,
-        organizationId: params.organizationId,
-        metadata: { name: params.file.name, type: params.type, size: params.file.size },
-      })
-    }
+    async getDownloadUrl(
+        storagePath: string,
+    ): Promise<{ url: string | null; error: string | null }> {
+        return documentRepository.getDownloadUrl(storagePath)
+    },
 
-    return result
-  },
-
-  getDownloadUrl(storagePath: string) {
-    return documentRepository.getDownloadUrl(storagePath)
-  },
-
-  async remove(id: string, storagePath: string, actorId: string, orgId: string) {
-    const result = await documentRepository.remove(id, storagePath)
-
-    if (!result.error) {
-      await auditRepository.log({
-        userId: actorId,
-        action: 'document.delete',
-        entityType: 'documents',
-        entityId: id,
-        organizationId: orgId,
-      })
-    }
-
-    return result
-  },
+    async remove(
+        id: string,
+        storagePath: string,
+        organizationId: string,
+        actorId: string,
+    ): Promise<{ error: string | null }> {
+        const result = await documentRepository.remove(id, storagePath)
+        if (!result.error) {
+            await auditRepository.log({
+                userId: actorId,
+                action: 'document.remove',
+                entityType: 'documents',
+                entityId: id,
+                organizationId,
+            })
+        }
+        return result
+    },
 }
+

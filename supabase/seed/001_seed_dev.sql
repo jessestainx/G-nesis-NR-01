@@ -7,9 +7,9 @@
 -- PASSO 1: Crie os usuários pelo Supabase Auth Dashboard ou via:
 --   supabase auth admin create-user --email admin@genesis.com --password senha123 \
 --     --user-metadata '{"name":"Admin Genesis","role":"genesis"}'
---
+
 -- PASSO 2: Após criar os usuários via Auth, copie os UUIDs gerados
---   e substitua os placeholders abaixo antes de executar.
+--  e substitua os placeholders abaixo antes de executar.
 
 -- Exemplo de organização para testes
 insert into organizations (id, name, cnpj, industry, employee_count, plan, status)

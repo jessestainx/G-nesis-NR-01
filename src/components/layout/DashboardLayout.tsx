@@ -1,31 +1,31 @@
-import { Header } from '@/components/layout/Header'
-import { Sidebar } from '@/components/layout/Sidebar'
-import { useAuth } from '@/hooks/useAuth'
 import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
+import { Sidebar } from '@/components/layout/Sidebar'
+import { Header } from '@/components/layout/Header'
+import { useAuth } from '@/hooks/useAuth'
 
 export function DashboardLayout() {
-  const { role } = useAuth()
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+    const [sidebarOpen, setSidebarOpen] = useState(false)
+    const { role } = useAuth()
 
-  if (!role) return null
+    if (!role) return null
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <Sidebar
-        role={role}
-        open={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-      />
+    return (
+        <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-950">
+            <Sidebar
+                role={role}
+                open={sidebarOpen}
+                onClose={() => setSidebarOpen(false)}
+            />
 
-      {/* Main content area — offset by sidebar width on desktop */}
-      <div className="lg:pl-64">
-        <Header onMenuClick={() => setSidebarOpen(true)} />
+            {/* Main content — offset for desktop sidebar */}
+            <div className="flex flex-1 flex-col overflow-hidden lg:pl-64">
+                <Header onMenuClick={() => setSidebarOpen((prev) => !prev)} />
 
-        <main className="p-4 lg:p-8">
-          <Outlet />
-        </main>
-      </div>
-    </div>
-  )
+                <main className="flex-1 overflow-y-auto p-6">
+                    <Outlet />
+                </main>
+            </div>
+        </div>
+    )
 }

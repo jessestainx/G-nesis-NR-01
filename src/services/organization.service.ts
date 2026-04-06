@@ -1,79 +1,72 @@
 import { organizationRepository } from '@/repositories/organization.repository'
 import { auditRepository } from '@/repositories/audit.repository'
-import type { QueryResult, QueryListResult } from '@/repositories/base.repository'
 import type { Organization, OrganizationUnit } from '@/types'
+import type { QueryListResult, QueryResult } from '@/repositories/base.repository'
 
 export const organizationService = {
-  list(): Promise<QueryListResult<Organization>> {
-    return organizationRepository.findAllActive()
-  },
+    async list(): Promise<QueryListResult<Organization>> {
+        return organizationRepository.findAllActive()
+    },
 
-  listByStatus(status: Organization['status']): Promise<QueryListResult<Organization>> {
-    return organizationRepository.findByStatus(status)
-  },
+    async listByStatus(status: Organization['status']): Promise<QueryListResult<Organization>> {
+        return organizationRepository.findByStatus(status)
+    },
 
-  get(id: string): Promise<QueryResult<Organization>> {
-    return organizationRepository.findById(id)
-  },
+    async get(id: string): Promise<QueryResult<Organization>> {
+        return organizationRepository.findById(id)
+    },
 
-  async create(
-    payload: Omit<Organization, 'id' | 'created_at' | 'updated_at'>,
-    actorId: string
-  ): Promise<QueryResult<Organization>> {
-    const result = await organizationRepository.create(payload)
+    async create(
+        payload: Omit<Organization, 'id' | 'created_at' | 'updated_at'>,
+        actorId: string,
+    ): Promise<QueryResult<Organization>> {
+        const result = await organizationRepository.create(payload)
+        if (result.data) {
+            await auditRepository.log({
+                userId: actorId,
+                action: 'organization.create',
+                entityType: 'organizations',
+                entityId: result.data.id,
+            })
+        }
+        return result
+    },
 
-    if (result.data) {
-      await auditRepository.log({
-        userId: actorId,
-        action: 'organization.create',
-        entityType: 'organization',
-        entityId: result.data.id,
-        metadata: { name: result.data.name },
-      })
-    }
+    async update(
+        id: string,
+        payload: Partial<Omit<Organization, 'id' | 'created_at'>>,
+        actorId: string,
+    ): Promise<QueryResult<Organization>> {
+        const result = await organizationRepository.update(id, payload)
+        if (result.data) {
+            await auditRepository.log({
+                userId: actorId,
+                action: 'organization.update',
+                entityType: 'organizations',
+                entityId: id,
+            })
+        }
+        return result
+    },
 
-    return result
-  },
+    async listUnits(organizationId: string): Promise<QueryListResult<OrganizationUnit>> {
+        return organizationRepository.findUnits(organizationId)
+    },
 
-  async update(
-    id: string,
-    payload: Partial<Omit<Organization, 'id' | 'created_at'>>,
-    actorId: string
-  ): Promise<QueryResult<Organization>> {
-    const result = await organizationRepository.update(id, payload)
+    async createUnit(
+        payload: Omit<OrganizationUnit, 'id' | 'created_at'>,
+    ): Promise<QueryResult<OrganizationUnit>> {
+        return organizationRepository.createUnit(payload)
+    },
 
-    if (result.data) {
-      await auditRepository.log({
-        userId: actorId,
-        action: 'organization.update',
-        entityType: 'organization',
-        entityId: id,
-        metadata: { fields: Object.keys(payload) },
-      })
-    }
+    async updateUnit(
+        id: string,
+        payload: Partial<Omit<OrganizationUnit, 'id' | 'created_at'>>,
+    ): Promise<QueryResult<OrganizationUnit>> {
+        return organizationRepository.updateUnit(id, payload)
+    },
 
-    return result
-  },
-
-  // ─── Unidades ──────────────────────────────────────────────────────────────
-  listUnits(organizationId: string): Promise<QueryListResult<OrganizationUnit>> {
-    return organizationRepository.findUnits(organizationId)
-  },
-
-  createUnit(
-    payload: Omit<OrganizationUnit, 'id' | 'created_at'>
-  ): Promise<QueryResult<OrganizationUnit>> {
-    return organizationRepository.createUnit(payload)
-  },
-
-  updateUnit(
-    id: string,
-    payload: Partial<Omit<OrganizationUnit, 'id' | 'created_at'>>
-  ): Promise<QueryResult<OrganizationUnit>> {
-    return organizationRepository.updateUnit(id, payload)
-  },
-
-  deleteUnit(id: string): Promise<{ error: string | null }> {
-    return organizationRepository.deleteUnit(id)
-  },
+    async deleteUnit(id: string): Promise<{ error: string | null }> {
+        return organizationRepository.deleteUnit(id)
+    },
 }

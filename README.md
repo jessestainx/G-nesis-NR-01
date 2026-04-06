@@ -1,223 +1,141 @@
-# Gênesis NR-01
+# Gênesis NR-01 — Portal
 
-Plataforma SaaS de gestão de riscos psicossociais ocupacionais (NR-01).
+Portal web para gestão de conformidade com NR-01 e riscos psicossociais.
+
+**URL:** https://portal.genesis360care.com.br
 
 ## Stack
 
-- **Frontend**: React 19 + TypeScript + Vite
-- **Estilo**: Tailwind CSS
-- **Estado servidor**: TanStack React Query
-- **Backend**: Supabase (PostgreSQL + Auth + Storage)
-- **Deploy**: Vercel
+| Camada | Tecnologia |
+|---|---|
+| Runtime | Bun |
+| Framework | React 19 + TypeScript |
+| Build | Vite |
+| Estilo | Tailwind CSS |
+| State / Data | TanStack React Query v5 |
+| Backend | Supabase (Auth + DB + Storage) |
+| Roteamento | React Router DOM v7 |
 
----
+## Estrutura de Roles
 
-## Setup — passo a passo
+| Role | Dashboard | Acesso |
+|---|---|---|
+| `genesis` | `/dashboard/genesis` | Admin completo |
+| `client_executive` | `/dashboard/client` | Dados da própria empresa |
+| `collaborator` | `/dashboard/collaborator` | Pesquisas (anônimo) |
+| `professional` | `/dashboard/professional` | Casos e diagnósticos |
 
-### 1. Pré-requisitos
+## Desenvolvimento local
 
-- Node.js 20+
-- Supabase CLI: `winget install Supabase.CLI`
-- Conta no [Supabase](https://supabase.com)
-- Conta no [Vercel](https://vercel.com)
+```bash
+# 1. Instalar dependências
+bun install
 
-### 2. Clonar e instalar
+# 2. Copiar e preencher variáveis de ambiente
+cp .env.example .env.development
+# edite .env.development com suas credenciais Supabase
 
-```powershell
-git clone https://github.com/jessestainx/G-nesis-NR-01.git
-cd G-nesis-NR-01
-npm install
+# 3. Iniciar servidor de desenvolvimento
+bun dev
 ```
 
-### 3. Criar projetos no Supabase
+## Variáveis de ambiente obrigatórias
 
-Crie **3 projetos** em [supabase.com/dashboard](https://supabase.com/dashboard):
-- `genesis-nr01-dev`
-- `genesis-nr01-staging`
-- `genesis-nr01-prod`
-
-### 4. Configurar variáveis de ambiente
-
-```powershell
-copy .env.example .env.development
-copy .env.example .env.staging
-copy .env.example .env.production
+```env
+VITE_SUPABASE_URL=https://<project-id>.supabase.co
+VITE_SUPABASE_ANON_KEY=<anon-key>
+VITE_APP_ENV=development   # development | staging | production
 ```
-
-Preencha cada arquivo com `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`
-do projeto correspondente (Supabase → Settings → API).
-
-### 5. Setup do banco de dev
-
-```powershell
-.\scripts\setup-dev.ps1
-```
-
-Este script automaticamente:
-- Autentica no Supabase CLI
-- Linka ao projeto dev
-- Aplica as 3 migrations (schema + RLS + storage)
-- Gera `src/types/database.ts` com tipos reais
-
-### 6. Criar o usuário admin
-
-No Supabase Dashboard → **Authentication → Users → Add user**:
-- Email: `admin@genesis.com`
-- User metadata:
-```json
-{ "name": "Admin Genesis", "role": "genesis" }
-```
-
-### 7. Rodar localmente
-
-```powershell
-npm run dev
-```
-
-Acesse: http://localhost:5173
-
----
 
 ## Scripts disponíveis
 
-### Desenvolvimento
+```bash
+bun dev                        # Dev server (porta 5173)
+bun run build                  # Build de produção
+bun run build:staging          # Build de staging
+bun run type-check             # tsc --noEmit
+bun run lint                   # eslint --max-warnings 0
+bun run format                 # prettier (src/**/*.{ts,tsx,css})
 
-| Comando | Descrição |
-|---|---|
-| `npm run dev` | Servidor local |
-| `npm run build` | Build produção |
-| `npm run build:staging` | Build staging |
-| `npm run type-check` | Verificar tipos TypeScript |
-| `npm run lint` | Lint (zero warnings) |
-| `npm run format` | Formatar código com Prettier |
-
-### Supabase
-
-| Comando | Descrição |
-|---|---|
-| `npm run supabase:setup:dev` | Setup completo do banco dev |
-| `npm run supabase:setup:staging` | Setup completo do banco staging |
-| `npm run supabase:setup:prod` | Setup completo do banco produção |
-| `npm run supabase:gen-types` | Regenerar tipos TypeScript (dev) |
-| `npm run supabase:gen-types:staging` | Regenerar tipos TypeScript (staging) |
-
----
-
-## Arquitetura
-
-```
-src/
-├── App.tsx                          # Roteamento + providers
-├── contexts/AuthContext.tsx         # AuthProvider
-├── contexts/authContext.internal.ts # Context object
-├── hooks/
-│   ├── useAuth.ts                   # Hook de autenticação
-│   └── queries/                     # Hooks React Query por domínio
-│       ├── useOrganizations.ts
-│       ├── useDiagnosis.ts
-│       ├── useActionPlans.ts
-│       ├── useDocuments.ts
-│       ├── useFinance.ts
-│       └── useProfiles.ts
-├── services/                        # Lógica de negócio + auditoria
-│   ├── organization.service.ts
-│   ├── diagnosis.service.ts
-│   ├── action-plan.service.ts
-│   ├── document.service.ts
-│   ├── crm.service.ts
-│   ├── finance.service.ts
-│   └── profile.service.ts
-├── repositories/                    # Acesso ao Supabase
-│   ├── base.repository.ts           # CRUD genérico
-│   ├── organization.repository.ts
-│   ├── profile.repository.ts
-│   ├── diagnosis.repository.ts
-│   ├── action-plan.repository.ts
-│   ├── document.repository.ts
-│   ├── crm.repository.ts
-│   ├── finance.repository.ts
-│   └── audit.repository.ts
-├── lib/
-│   ├── supabase.ts                  # Cliente singleton
-│   ├── env.ts                       # Validação de env no boot
-│   └── queryClient.ts               # React Query config
-├── types/
-│   ├── index.ts                     # Tipos de domínio
-│   ├── auth.ts                      # Tipos de autenticação
-│   └── database.ts                  # Gerado pelo Supabase CLI
-└── utils/format.ts                  # Formatadores (data, moeda, labels)
+bun run supabase:setup:dev             # Configura ambiente dev
+bun run supabase:setup:staging         # Configura staging
+bun run supabase:setup:prod            # Configura produção
+bun run supabase:gen-types             # Gera tipos TypeScript (dev)
+bun run supabase:gen-types:staging     # Gera tipos TypeScript (staging)
+bun run supabase:gen-types:prod        # Gera tipos TypeScript (prod)
+bun run supabase:create-admin          # Cria usuário genesis admin (dev)
+bun run supabase:create-admin:staging  # Cria usuário genesis admin (staging)
+bun run supabase:create-admin:prod     # Cria usuário genesis admin (prod)
 ```
 
-### Fluxo de dados
+## Arquitetura de camadas
 
 ```
-UI (componente)
-  → Hook React Query  (useOrganizations, useDiagnosis...)
-    → Service         (organizationService, diagnosisService...)
-      → Repository    (organizationRepository...)
-        → Supabase    (PostgreSQL + RLS)
+Supabase
+  └── repositories/   (acesso direto ao banco via supabase-js)
+        └── services/   (regras de negócio + audit logging)
+              └── hooks/queries/  (TanStack Query — loading/error/cache)
+                    └── pages/    (React — renderização)
 ```
 
-### Roles
+## Regras de qualidade
 
-| Role | Acesso |
-|---|---|
-| `genesis` | Admin total — todos os clientes, CRM, financeiro |
-| `client_executive` | Empresa contratante — apenas sua org |
-| `collaborator` | Funcionário — pesquisas e escuta |
-| `professional` | Psicólogo/especialista — casos sensíveis |
+- Zero avisos: `bun run lint`
+- Zero erros TS: `bun run type-check`
+- Sem `as any` (exceto `base.repository.ts`)
+- Sem `@ts-ignore`
+- Variáveis não usadas prefixadas com `_`
+- `import type` sempre que possível
+- Máximo 200–300 linhas por arquivo
 
----
+## Deploy
 
-## Ambientes
+### 🚀 Deploy automatizado via GitHub Actions
 
-| Ambiente | Branch | URL |
+| Branch | Ambiente | Workflow |
 |---|---|---|
-| Development | qualquer | `localhost:5173` |
-| Staging | `staging` | `staging.seudominio.com.br` |
-| Production | `main` | `seudominio.com.br` |
+| `main` | Produção | `deploy-production.yml` |
+| `staging` | Staging | `deploy-staging.yml` |
+| `*` (any) | CI/CD (lint + build) | `ci.yml` |
 
----
+### 📋 Primeiro deploy (Setup completo)
 
-## Deploy (Vercel + GitHub Actions)
+**Fluxo recomendado:**
+```bash
+# 1. Validar código antes do deploy
+bash validate-deploy.sh
 
-Configure os Secrets em: GitHub → Settings → Secrets → Actions
+# 2. Executar assistente de deploy
+bash deploy-helper.sh
 
-```
-VERCEL_TOKEN
-VERCEL_ORG_ID
-VERCEL_PROJECT_ID
-STAGING_SUPABASE_URL
-STAGING_SUPABASE_ANON_KEY
-STAGING_APP_URL
-PROD_SUPABASE_URL
-PROD_SUPABASE_ANON_KEY
-PROD_APP_URL
+# 3. Verificar resultado
+bash check-deploy.sh
 ```
 
-O CI/CD dispara automaticamente:
-- **Qualquer push** → lint + type-check + build
-- **Push em `staging`** → deploy staging
-- **Push em `main`** → deploy produção
+**Documentação detalhada:**
+- **[DEPLOY-CHECKLIST.md](DEPLOY-CHECKLIST.md)** — Guia passo a passo com 9 etapas
+- **[QUICK-COMMANDS.md](QUICK-COMMANDS.md)** — Referência rápida de comandos
+- **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** — Soluções para problemas comuns
 
----
+### 🖥️ Setup do servidor
 
-## Migrations
-
-Execute na ordem após criar cada projeto Supabase:
-
-```
-supabase/migrations/001_initial_schema.sql  — 15 tabelas + triggers + índices
-supabase/migrations/002_rls_policies.sql    — Row Level Security por role
-supabase/migrations/003_storage.sql         — Bucket documents + políticas
+```bash
+CERTBOT_EMAIL=seu@email.com bash setup-portal.sh
 ```
 
-Os scripts `setup-*.ps1` fazem isso automaticamente.
+O script executa: `bun install` → `bun run build` → copia `dist/` para `/var/www/portal.genesis360care.com.br/` → configura Nginx → emite certificado SSL.
 
----
+## Supabase
 
-## Regenerar tipos após mudança no schema
+Migrações em `supabase/migrations/`. Para aplicar:
 
-```powershell
-npm run supabase:gen-types
+```bash
+bun run supabase:setup:prod          # aplica migrations + gera tipos
+supabase db push                     # apenas migrations
+```
+
+Seed de desenvolvimento:
+
+```bash
+supabase db reset                   # aplica migrações + seed
 ```

@@ -3,32 +3,32 @@ import { supabase } from '@/lib/supabase'
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 export interface QueryResult<T> {
-  data: T | null
-  error: string | null
+    data: T | null
+    error: string | null
 }
 
 export interface QueryListResult<T> {
-  data: T[]
-  error: string | null
-  count: number | null
+    data: T[]
+    error: string | null
+    count: number | null
 }
 
 export interface PaginationParams {
-  page?: number
-  pageSize?: number
+    page?: number
+    pageSize?: number
 }
 
 export interface FilterParams {
-  search?: string
-  orderBy?: string
-  orderDir?: 'asc' | 'desc'
+    search?: string
+    orderBy?: string
+    orderDir?: 'asc' | 'desc'
 }
 
 // ─── Formatador de erro ───────────────────────────────────────────────────────
 export function formatError(error: PostgrestError | null, fallback?: string): string | null {
-  if (!error) return null
-  console.error('[Repository]', error)
-  return error.message ?? fallback ?? 'Erro desconhecido'
+    if (!error) return null
+    console.error('[Repository]', error)
+    return error.message ?? fallback ?? 'Erro desconhecido'
 }
 
 // ─── Cliente sem tipagem de schema (usada até gerar types via Supabase CLI) ───
@@ -39,66 +39,70 @@ export const db = supabase as SupabaseClient<any>
 
 // ─── Base Repository ──────────────────────────────────────────────────────────
 export class BaseRepository<T extends { id: string }> {
-  protected readonly table: string
+    protected readonly table: string
 
-  constructor(table: string) {
-    this.table = table
-  }
-
-  async findById(id: string): Promise<QueryResult<T>> {
-    const { data, error } = await db
-      .from(this.table)
-      .select('*')
-      .eq('id', id)
-      .single()
-
-    return { data: data as T | null, error: formatError(error) }
-  }
-
-  async findAll(params?: PaginationParams & FilterParams): Promise<QueryListResult<T>> {
-    let query = db.from(this.table).select('*', { count: 'exact' })
-
-    if (params?.orderBy) {
-      query = query.order(params.orderBy, { ascending: params.orderDir !== 'desc' })
+    constructor(table: string) {
+        this.table = table
     }
 
-    if (params?.page !== undefined && params?.pageSize) {
-      const from = params.page * params.pageSize
-      const to = from + params.pageSize - 1
-      query = query.range(from, to)
+    async findById(id: string): Promise<QueryResult<T>> {
+        const { data, error } = await db
+            .from(this.table)
+            .select('*')
+            .eq('id', id)
+            .single()
+
+        return { data: data as T | null, error: formatError(error) }
     }
 
-    const { data, error, count } = await query
+    async findAll(params?: PaginationParams & FilterParams): Promise<QueryListResult<T>> {
+        let query = db.from(this.table).select('*', { count: 'exact' })
 
-    return { data: (data as T[]) ?? [], error: formatError(error), count }
-  }
+        if (params?.orderBy) {
+            query = query.order(params.orderBy, {
+                ascending: params.orderDir !== 'desc',
+            })
+        }
 
-  async create(payload: Omit<T, 'id' | 'created_at' | 'updated_at'>): Promise<QueryResult<T>> {
-    const { data, error } = await db
-      .from(this.table)
-      .insert(payload)
-      .select()
-      .single()
+        if (params?.page !== undefined && params?.pageSize) {
+            const from = params.page * params.pageSize
+            const to = from + params.pageSize - 1
+            query = query.range(from, to)
+        }
 
-    return { data: data as T | null, error: formatError(error) }
-  }
+        const { data, error, count } = await query
 
-  async update(
-    id: string,
-    payload: Partial<Omit<T, 'id' | 'created_at'>>
-  ): Promise<QueryResult<T>> {
-    const { data, error } = await db
-      .from(this.table)
-      .update(payload)
-      .eq('id', id)
-      .select()
-      .single()
+        return { data: (data as T[]) ?? [], error: formatError(error), count }
+    }
 
-    return { data: data as T | null, error: formatError(error) }
-  }
+    async create(
+        payload: Omit<T, 'id' | 'created_at' | 'updated_at'>,
+    ): Promise<QueryResult<T>> {
+        const { data, error } = await db
+            .from(this.table)
+            .insert(payload)
+            .select()
+            .single()
 
-  async delete(id: string): Promise<{ error: string | null }> {
-    const { error } = await db.from(this.table).delete().eq('id', id)
-    return { error: formatError(error) }
-  }
+        return { data: data as T | null, error: formatError(error) }
+    }
+
+    async update(
+        id: string,
+        payload: Partial<Omit<T, 'id' | 'created_at'>>,
+    ): Promise<QueryResult<T>> {
+        const { data, error } = await db
+            .from(this.table)
+            .update(payload)
+            .eq('id', id)
+            .select()
+            .single()
+
+        return { data: data as T | null, error: formatError(error) }
+    }
+
+    async delete(id: string): Promise<{ error: string | null }> {
+        const { error } = await db.from(this.table).delete().eq('id', id)
+        return { error: formatError(error) }
+    }
 }

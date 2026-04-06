@@ -1,274 +1,129 @@
 -- ============================================================
--- Gênesis NR-01 — Migration 002: Row Level Security
--- Garante que cada role só acessa os dados permitidos.
+-- Migração 002: Row Level Security (RLS)
 -- ============================================================
 
--- ─── Helpers ─────────────────────────────────────────────────
--- Retorna o role do usuário autenticado sem N+1 query
-create or replace function auth_role()
-returns user_role as $$
-  select role from profiles where id = auth.uid()
-$$ language sql stable security definer;
+-- Habilitar RLS em todas as tabelas
+ALTER TABLE profiles                ENABLE ROW LEVEL SECURITY;
+ALTER TABLE organizations           ENABLE ROW LEVEL SECURITY;
+ALTER TABLE organization_units      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE diagnoses               ENABLE ROW LEVEL SECURITY;
+ALTER TABLE psychosocial_risks      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE action_plans            ENABLE ROW LEVEL SECURITY;
+ALTER TABLE action_items            ENABLE ROW LEVEL SECURITY;
+ALTER TABLE documents               ENABLE ROW LEVEL SECURITY;
+ALTER TABLE trainings               ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pulse_surveys           ENABLE ROW LEVEL SECURITY;
+ALTER TABLE crm_contacts            ENABLE ROW LEVEL SECURITY;
+ALTER TABLE contracts               ENABLE ROW LEVEL SECURITY;
+ALTER TABLE financial_transactions  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE audit_logs              ENABLE ROW LEVEL SECURITY;
 
--- Retorna o organization_id do usuário autenticado
-create or replace function auth_org_id()
-returns uuid as $$
-  select organization_id from profiles where id = auth.uid()
-$$ language sql stable security definer;
+-- ─── Helper: papel do usuário atual ───────────────────────────────────────────
+CREATE OR REPLACE FUNCTION auth.user_role()
+RETURNS TEXT LANGUAGE sql STABLE SECURITY DEFINER AS $$
+  SELECT role::TEXT FROM public.profiles WHERE id = auth.uid()
+$$;
 
--- ─── Habilitar RLS em todas as tabelas ───────────────────────
-alter table organizations         enable row level security;
-alter table profiles              enable row level security;
-alter table organization_units    enable row level security;
-alter table psychosocial_diagnosis enable row level security;
-alter table psychosocial_risks    enable row level security;
-alter table action_plans          enable row level security;
-alter table action_items          enable row level security;
-alter table trainings             enable row level security;
-alter table documents             enable row level security;
-alter table pulse_surveys         enable row level security;
-alter table pulse_responses       enable row level security;
-alter table crm_contacts          enable row level security;
-alter table contracts             enable row level security;
-alter table financial_transactions enable row level security;
-alter table audit_logs            enable row level security;
+-- ─── Helper: organização do usuário atual ─────────────────────────────────────
+CREATE OR REPLACE FUNCTION auth.user_organization()
+RETURNS UUID LANGUAGE sql STABLE SECURITY DEFINER AS $$
+  SELECT organization_id FROM public.profiles WHERE id = auth.uid()
+$$;
 
--- ─── organizations ───────────────────────────────────────────
--- genesis: vê todas | client_executive/collaborator/professional: apenas a sua
-create policy "organizations: genesis vê todas"
-  on organizations for select
-  using (auth_role() = 'genesis');
+-- ─── Policies: profiles ───────────────────────────────────────────────────────
+CREATE POLICY "Usuário lê próprio perfil"
+  ON profiles FOR SELECT
+  USING (id = auth.uid());
 
-create policy "organizations: membros vêem a sua"
-  on organizations for select
-  using (id = auth_org_id());
+CREATE POLICY "genesis lê todos os perfis"
+  ON profiles FOR SELECT
+  USING (auth.user_role() = 'genesis');
 
-create policy "organizations: apenas genesis insere/atualiza"
-  on organizations for all
-  using (auth_role() = 'genesis');
-
--- ─── profiles ────────────────────────────────────────────────
-create policy "profiles: usuário vê o próprio"
-  on profiles for select
-  using (id = auth.uid());
-
-create policy "profiles: genesis vê todos"
-  on profiles for select
-  using (auth_role() = 'genesis');
-
-create policy "profiles: client_executive vê da mesma org"
-  on profiles for select
-  using (
-    auth_role() = 'client_executive'
-    and organization_id = auth_org_id()
+CREATE POLICY "Professional lê perfis da sua org"
+  ON profiles FOR SELECT
+  USING (
+    auth.user_role() = 'professional'
+    AND organization_id = auth.user_organization()
   );
 
-create policy "profiles: usuário atualiza o próprio"
-  on profiles for update
-  using (id = auth.uid());
+CREATE POLICY "Usuário atualiza próprio perfil"
+  ON profiles FOR UPDATE
+  USING (id = auth.uid());
 
-create policy "profiles: genesis gerencia todos"
-  on profiles for all
-  using (auth_role() = 'genesis');
+CREATE POLICY "genesis atualiza qualquer perfil"
+  ON profiles FOR UPDATE
+  USING (auth.user_role() = 'genesis');
 
--- ─── organization_units ──────────────────────────────────────
-create policy "units: genesis vê todas"
-  on organization_units for select
-  using (auth_role() = 'genesis');
+-- ─── Policies: organizations ──────────────────────────────────────────────────
+CREATE POLICY "genesis gerencia organizações"
+  ON organizations FOR ALL
+  USING (auth.user_role() = 'genesis');
 
-create policy "units: membros vêem da sua org"
-  on organization_units for select
-  using (organization_id = auth_org_id());
+CREATE POLICY "Professional vê sua organização"
+  ON organizations FOR SELECT
+  USING (id = auth.user_organization());
 
-create policy "units: genesis e client_executive gerenciam"
-  on organization_units for all
-  using (
-    auth_role() = 'genesis'
-    or (auth_role() = 'client_executive' and organization_id = auth_org_id())
+CREATE POLICY "Cliente vê sua organização"
+  ON organizations FOR SELECT
+  USING (id = auth.user_organization());
+
+-- ─── Policies: diagnoses ──────────────────────────────────────────────────────
+CREATE POLICY "genesis e professional gerenciam diagnósticos"
+  ON diagnoses FOR ALL
+  USING (auth.user_role() IN ('genesis', 'professional'));
+
+CREATE POLICY "client_executive vê diagnósticos da org"
+  ON diagnoses FOR SELECT
+  USING (
+    auth.user_role() = 'client_executive'
+    AND organization_id = auth.user_organization()
   );
 
--- ─── psychosocial_diagnosis ──────────────────────────────────
-create policy "diagnosis: genesis vê todos"
-  on psychosocial_diagnosis for select
-  using (auth_role() = 'genesis');
+-- ─── Policies: action_plans ───────────────────────────────────────────────────
+CREATE POLICY "genesis e professional gerenciam planos"
+  ON action_plans FOR ALL
+  USING (auth.user_role() IN ('genesis', 'professional'));
 
-create policy "diagnosis: client_executive vê da sua org"
-  on psychosocial_diagnosis for select
-  using (
-    auth_role() = 'client_executive'
-    and organization_id = auth_org_id()
+CREATE POLICY "client_executive vê planos da org"
+  ON action_plans FOR SELECT
+  USING (
+    auth.user_role() = 'client_executive'
+    AND organization_id = auth.user_organization()
   );
 
-create policy "diagnosis: genesis e professional gerenciam"
-  on psychosocial_diagnosis for all
-  using (auth_role() in ('genesis', 'professional'));
+CREATE POLICY "Responsável vê seus planos"
+  ON action_plans FOR SELECT
+  USING (responsible_id = auth.uid());
 
--- ─── psychosocial_risks ──────────────────────────────────────
-create policy "risks: genesis vê todos"
-  on psychosocial_risks for select
-  using (auth_role() = 'genesis');
+-- ─── Policies: documents ──────────────────────────────────────────────────────
+CREATE POLICY "genesis e professional gerenciam documentos"
+  ON documents FOR ALL
+  USING (auth.user_role() IN ('genesis', 'professional'));
 
-create policy "risks: client_executive e professional vêem da sua org"
-  on psychosocial_risks for select
-  using (
-    auth_role() in ('client_executive', 'professional')
-    and organization_id = auth_org_id()
-  );
+CREATE POLICY "Membros da org veem documentos"
+  ON documents FOR SELECT
+  USING (organization_id = auth.user_organization());
 
-create policy "risks: genesis e professional gerenciam"
-  on psychosocial_risks for all
-  using (auth_role() in ('genesis', 'professional'));
+-- ─── Policies: crm_contacts ───────────────────────────────────────────────────
+CREATE POLICY "genesis e professional gerenciam CRM"
+  ON crm_contacts FOR ALL
+  USING (auth.user_role() IN ('genesis', 'professional'));
 
--- ─── action_plans ────────────────────────────────────────────
-create policy "action_plans: genesis vê todos"
-  on action_plans for select
-  using (auth_role() = 'genesis');
+-- ─── Policies: contracts ──────────────────────────────────────────────────────
+CREATE POLICY "genesis e professional gerenciam contratos"
+  ON contracts FOR ALL
+  USING (auth.user_role() IN ('genesis', 'professional'));
 
-create policy "action_plans: client_executive vê da sua org"
-  on action_plans for select
-  using (
-    auth_role() = 'client_executive'
-    and organization_id = auth_org_id()
-  );
+-- ─── Policies: financial_transactions ────────────────────────────────────────
+CREATE POLICY "Somente genesis gerencia financeiro"
+  ON financial_transactions FOR ALL
+  USING (auth.user_role() = 'genesis');
 
-create policy "action_plans: genesis e client_executive gerenciam"
-  on action_plans for all
-  using (
-    auth_role() = 'genesis'
-    or (auth_role() = 'client_executive' and organization_id = auth_org_id())
-  );
+-- ─── Policies: audit_logs ─────────────────────────────────────────────────────
+CREATE POLICY "genesis lê audit logs"
+  ON audit_logs FOR SELECT
+  USING (auth.user_role() = 'genesis');
 
--- ─── action_items ────────────────────────────────────────────
-create policy "action_items: herda permissão do plano"
-  on action_items for select
-  using (
-    exists (
-      select 1 from action_plans ap
-      where ap.id = action_plan_id
-        and (
-          auth_role() = 'genesis'
-          or ap.organization_id = auth_org_id()
-        )
-    )
-  );
-
-create policy "action_items: genesis e client_executive gerenciam"
-  on action_items for all
-  using (
-    exists (
-      select 1 from action_plans ap
-      where ap.id = action_plan_id
-        and (
-          auth_role() = 'genesis'
-          or (auth_role() = 'client_executive' and ap.organization_id = auth_org_id())
-        )
-    )
-  );
-
--- ─── trainings ───────────────────────────────────────────────
-create policy "trainings: genesis vê todos"
-  on trainings for select
-  using (auth_role() = 'genesis');
-
-create policy "trainings: membros vêem da sua org"
-  on trainings for select
-  using (organization_id = auth_org_id());
-
-create policy "trainings: genesis e client_executive gerenciam"
-  on trainings for all
-  using (
-    auth_role() = 'genesis'
-    or (auth_role() = 'client_executive' and organization_id = auth_org_id())
-  );
-
--- ─── documents ───────────────────────────────────────────────
-create policy "documents: genesis vê todos"
-  on documents for select
-  using (auth_role() = 'genesis');
-
-create policy "documents: membros vêem da sua org"
-  on documents for select
-  using (organization_id = auth_org_id());
-
-create policy "documents: genesis e client_executive gerenciam"
-  on documents for all
-  using (
-    auth_role() = 'genesis'
-    or (auth_role() = 'client_executive' and organization_id = auth_org_id())
-  );
-
--- ─── pulse_surveys ───────────────────────────────────────────
-create policy "surveys: genesis vê todos"
-  on pulse_surveys for select
-  using (auth_role() = 'genesis');
-
-create policy "surveys: membros vêem da sua org"
-  on pulse_surveys for select
-  using (organization_id = auth_org_id());
-
-create policy "surveys: genesis e client_executive gerenciam"
-  on pulse_surveys for all
-  using (
-    auth_role() = 'genesis'
-    or (auth_role() = 'client_executive' and organization_id = auth_org_id())
-  );
-
--- ─── pulse_responses ─────────────────────────────────────────
--- Colaborador só vê e insere as próprias respostas
-create policy "responses: colaborador vê as próprias"
-  on pulse_responses for select
-  using (respondent_id = auth.uid());
-
-create policy "responses: colaborador insere"
-  on pulse_responses for insert
-  with check (respondent_id = auth.uid());
-
-create policy "responses: genesis e client_executive vêem da sua org"
-  on pulse_responses for select
-  using (
-    auth_role() in ('genesis', 'client_executive')
-    and exists (
-      select 1 from pulse_surveys ps
-      where ps.id = survey_id
-        and (auth_role() = 'genesis' or ps.organization_id = auth_org_id())
-    )
-  );
-
--- ─── crm_contacts ────────────────────────────────────────────
-create policy "crm: apenas genesis acessa"
-  on crm_contacts for all
-  using (auth_role() = 'genesis');
-
--- ─── contracts ───────────────────────────────────────────────
-create policy "contracts: genesis vê todos"
-  on contracts for select
-  using (auth_role() = 'genesis');
-
-create policy "contracts: client_executive vê da sua org"
-  on contracts for select
-  using (
-    auth_role() = 'client_executive'
-    and organization_id = auth_org_id()
-  );
-
-create policy "contracts: apenas genesis gerencia"
-  on contracts for all
-  using (auth_role() = 'genesis');
-
--- ─── financial_transactions ──────────────────────────────────
-create policy "finance: apenas genesis acessa"
-  on financial_transactions for all
-  using (auth_role() = 'genesis');
-
--- ─── audit_logs ──────────────────────────────────────────────
-create policy "audit: genesis vê todos"
-  on audit_logs for select
-  using (auth_role() = 'genesis');
-
-create policy "audit: usuário vê os próprios"
-  on audit_logs for select
-  using (user_id = auth.uid());
-
-create policy "audit: qualquer autenticado insere"
-  on audit_logs for insert
-  with check (user_id = auth.uid());
+CREATE POLICY "Sistema insere audit logs"
+  ON audit_logs FOR INSERT
+  WITH CHECK (true);

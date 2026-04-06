@@ -4,98 +4,79 @@ import { useAuth } from '@/hooks/useAuth'
 import type { ActionPlan, ActionItem } from '@/types'
 
 export const actionPlanKeys = {
-  all: ['action_plans'] as const,
-  byOrg: (orgId: string) => [...actionPlanKeys.all, 'org', orgId] as const,
-  detail: (id: string) => [...actionPlanKeys.all, 'detail', id] as const,
-  items: (planId: string) => [...actionPlanKeys.all, 'items', planId] as const,
+    all: ['action-plans'] as const,
+    byOrg: (orgId: string) => [...actionPlanKeys.all, 'org', orgId] as const,
+    items: (apId: string) => [...actionPlanKeys.all, 'items', apId] as const,
 }
 
 export function useActionPlans(organizationId: string) {
-  return useQuery({
-    queryKey: actionPlanKeys.byOrg(organizationId),
-    queryFn: () => actionPlanService.listByOrganization(organizationId),
-    enabled: !!organizationId,
-    select: r => r.data,
-  })
+    return useQuery({
+        queryKey: actionPlanKeys.byOrg(organizationId),
+        queryFn: () => actionPlanService.listByOrganization(organizationId),
+        enabled: !!organizationId,
+        select: (res) => res.data,
+    })
 }
 
-export function useActionPlan(id: string) {
-  return useQuery({
-    queryKey: actionPlanKeys.detail(id),
-    queryFn: () => actionPlanService.get(id),
-    enabled: !!id,
-    select: r => r.data,
-  })
-}
-
-export function useActionItems(actionPlanId: string) {
-  return useQuery({
-    queryKey: actionPlanKeys.items(actionPlanId),
-    queryFn: () => actionPlanService.listItems(actionPlanId),
-    enabled: !!actionPlanId,
-    select: r => r.data,
-  })
+export function useActionPlanItems(actionPlanId: string) {
+    return useQuery({
+        queryKey: actionPlanKeys.items(actionPlanId),
+        queryFn: () => actionPlanService.listItems(actionPlanId),
+        enabled: !!actionPlanId,
+        select: (res) => res.data,
+    })
 }
 
 export function useCreateActionPlan() {
-  const queryClient = useQueryClient()
-  const { user } = useAuth()
-
-  return useMutation({
-    mutationFn: (payload: Omit<ActionPlan, 'id' | 'created_at' | 'updated_at' | 'progress_pct'>) =>
-      actionPlanService.create(payload, user!.id),
-    onSuccess: (_, { organization_id }) => {
-      queryClient.invalidateQueries({ queryKey: actionPlanKeys.byOrg(organization_id) })
-    },
-  })
+    const qc = useQueryClient()
+    const { user } = useAuth()
+    return useMutation({
+        mutationFn: (payload: Omit<ActionPlan, 'id' | 'created_at' | 'updated_at'>) =>
+            actionPlanService.create(payload, user!.id),
+        onSuccess: (_data: unknown, variables: Omit<ActionPlan, 'id' | 'created_at' | 'updated_at'>) => {
+            qc.invalidateQueries({ queryKey: actionPlanKeys.byOrg(variables.organization_id) })
+        },
+    })
 }
 
 export function useUpdateActionPlan() {
-  const queryClient = useQueryClient()
-  const { user } = useAuth()
-
-  return useMutation({
-    mutationFn: ({
-      id,
-      organizationId: _organizationId,
-      ...payload
-    }: Partial<ActionPlan> & { id: string; organizationId: string }) =>
-      actionPlanService.update(id, payload, user!.id),
-    onSuccess: (_result, { id, organizationId }) => {
-      queryClient.invalidateQueries({ queryKey: actionPlanKeys.byOrg(organizationId) })
-      queryClient.invalidateQueries({ queryKey: actionPlanKeys.detail(id) })
-    },
-  })
+    const qc = useQueryClient()
+    const { user } = useAuth()
+    return useMutation({
+        mutationFn: (vars: {
+            id: string
+            organizationId: string
+            payload: Partial<Omit<ActionPlan, 'id' | 'created_at'>>
+        }) => actionPlanService.update(vars.id, vars.payload, user!.id),
+        onSuccess: (_data: unknown, variables: { id: string; organizationId: string; payload: Partial<Omit<ActionPlan, 'id' | 'created_at'>> }) => {
+            qc.invalidateQueries({ queryKey: actionPlanKeys.byOrg(variables.organizationId) })
+        },
+    })
 }
 
 export function useCreateActionItem() {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: (payload: Omit<ActionItem, 'id' | 'created_at' | 'completed_at'>) =>
-      actionPlanService.createItem(payload),
-    onSuccess: (_, { action_plan_id }) => {
-      queryClient.invalidateQueries({ queryKey: actionPlanKeys.items(action_plan_id) })
-      queryClient.invalidateQueries({ queryKey: actionPlanKeys.detail(action_plan_id) })
-    },
-  })
+    const qc = useQueryClient()
+    const { user } = useAuth()
+    return useMutation({
+        mutationFn: (payload: Omit<ActionItem, 'id' | 'created_at' | 'completed_at'>) =>
+            actionPlanService.createItem(payload, user!.id),
+        onSuccess: (_data: unknown, variables: Omit<ActionItem, 'id' | 'created_at' | 'completed_at'>) => {
+            qc.invalidateQueries({ queryKey: actionPlanKeys.items(variables.action_plan_id) })
+        },
+    })
 }
 
 export function useUpdateActionItem() {
-  const queryClient = useQueryClient()
-  const { user } = useAuth()
-
-  return useMutation({
-    mutationFn: ({
-      id,
-      actionPlanId,
-      ...payload
-    }: Partial<ActionItem> & { id: string; actionPlanId: string }) =>
-      actionPlanService.updateItem(id, actionPlanId, payload, user!.id),
-    onSuccess: (_, { actionPlanId }) => {
-      queryClient.invalidateQueries({ queryKey: actionPlanKeys.items(actionPlanId) })
-      queryClient.invalidateQueries({ queryKey: actionPlanKeys.detail(actionPlanId) })
-      queryClient.invalidateQueries({ queryKey: actionPlanKeys.all })
-    },
-  })
+    const qc = useQueryClient()
+    const { user } = useAuth()
+    return useMutation({
+        mutationFn: (vars: {
+            id: string
+            actionPlanId: string
+            payload: Partial<Omit<ActionItem, 'id' | 'created_at'>>
+        }) => actionPlanService.updateItem(vars.id, vars.payload, user!.id),
+        onSuccess: (_data: unknown, variables: { id: string; actionPlanId: string; payload: Partial<Omit<ActionItem, 'id' | 'created_at'>> }) => {
+            qc.invalidateQueries({ queryKey: actionPlanKeys.items(variables.actionPlanId) })
+        },
+    })
 }
