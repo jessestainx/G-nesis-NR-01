@@ -35,15 +35,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, [user, fetchProfile])
 
     useEffect(() => {
+        // Timeout de segurança: se getSession() não responder em 8s, mostra o formulário de login
+        const safetyTimeout = setTimeout(() => setIsLoading(false), 8000)
+
         supabase.auth.getSession().then(async ({ data: { session } }) => {
+            clearTimeout(safetyTimeout)
             setSession(session)
             setUser(session?.user ?? null)
             if (session?.user) setProfile(await fetchProfile(session.user.id))
+            setIsLoading(false)
+        }).catch(() => {
+            clearTimeout(safetyTimeout)
             setIsLoading(false)
         })
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (_event, session) => {
+                clearTimeout(safetyTimeout)
                 setSession(session)
                 setUser(session?.user ?? null)
                 if (session?.user) {
@@ -55,7 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
         )
 
-        return () => subscription.unsubscribe()
+        return () => { clearTimeout(safetyTimeout); subscription.unsubscribe() }
     }, [fetchProfile])
 
     const signIn = useCallback(async (email: string, password: string) => {
