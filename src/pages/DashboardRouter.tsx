@@ -1,11 +1,23 @@
 import { Navigate } from 'react-router-dom'
+import { useEffect } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 
-// Cada role é redirecionado para seu dashboard específico.
 export function DashboardRouter() {
-    const { role, isLoading } = useAuth()
+    const { role, isLoading, isAuthenticated, refreshProfile } = useAuth()
 
-    if (isLoading) return null
+    useEffect(() => {
+        if (!isLoading && isAuthenticated && !role) {
+            refreshProfile()
+        }
+    }, [isLoading, isAuthenticated, role, refreshProfile])
+
+    if (isLoading || (isAuthenticated && !role)) {
+        return (
+            <div className="flex h-screen items-center justify-center bg-gray-50">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#00A898] border-t-transparent" />
+            </div>
+        )
+    }
 
     switch (role) {
         case 'genesis':

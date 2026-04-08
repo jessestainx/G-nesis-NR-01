@@ -35,8 +35,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, [user, fetchProfile])
 
     useEffect(() => {
-        // Timeout de segurança: se getSession() não responder em 8s, mostra o formulário de login
-        const safetyTimeout = setTimeout(() => setIsLoading(false), 8000)
+        // Timeout de segurança: se getSession() não responder em 15s, mostra o formulário de login
+        const safetyTimeout = setTimeout(() => {
+            setIsLoading(false)
+            setSession(null)
+            setUser(null)
+            setProfile(null)
+        }, 15000)
 
         supabase.auth.getSession().then(async ({ data: { session } }) => {
             clearTimeout(safetyTimeout)
