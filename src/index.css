@@ -4,8 +4,8 @@
 
 @layer base {
     :root {
-        --color-primary: 79 70 229;
-        /* indigo-600 */
+        /* Gênesis teal — matches Figma accent */
+        --color-primary: 0 168 152;
     }
 
     body {
