@@ -47,8 +47,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             clearTimeout(safetyTimeout)
             setSession(session)
             setUser(session?.user ?? null)
-            if (session?.user) setProfile(await fetchProfile(session.user.id))
-            setIsLoading(false)
+            setIsLoading(false) // desbloqueia UI antes de buscar o perfil
+            if (session?.user) {
+                const p = await fetchProfile(session.user.id)
+                setProfile(p)
+            }
         }).catch(() => {
             clearTimeout(safetyTimeout)
             setIsLoading(false)
@@ -59,12 +62,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 clearTimeout(safetyTimeout)
                 setSession(session)
                 setUser(session?.user ?? null)
+                setIsLoading(false) // desbloqueia UI antes de buscar o perfil
                 if (session?.user) {
-                    setProfile(await fetchProfile(session.user.id))
+                    const p = await fetchProfile(session.user.id)
+                    setProfile(p)
                 } else {
                     setProfile(null)
                 }
-                setIsLoading(false)
             }
         )
 
