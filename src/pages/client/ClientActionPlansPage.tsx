@@ -1,7 +1,9 @@
+import { ClipboardList } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { useActionPlans } from '@/hooks/queries/useActionPlans'
 import { SectionLoader } from '@/components/ui/LoadingSpinner'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { actionStatusLabel, formatDate, formatPercent } from '@/utils/format'
 import type { ActionPlan } from '@/types'
 
@@ -75,12 +77,7 @@ export function ClientActionPlansPage() {
             </div>
 
             {!plans || plans.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-gray-300 p-12 text-center dark:border-gray-700">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Nenhum plano de ação disponível.
-                    </p>
-                </div>
-            ) : (
+                <EmptyState icon={ClipboardList} title="Nenhum plano de ação" description="Planos de ação aparecerão aqui quando criados." />) : (
                 <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
                     <table className="w-full">
                         <thead>

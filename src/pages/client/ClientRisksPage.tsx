@@ -1,7 +1,9 @@
+import { AlertTriangle } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { useRisks } from '@/hooks/queries/useDiagnosis'
 import { SectionLoader } from '@/components/ui/LoadingSpinner'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { riskLevelLabel, formatDate } from '@/utils/format'
 import type { PsychosocialRisk } from '@/types'
 
@@ -76,12 +78,7 @@ export function ClientRisksPage() {
             </div>
 
             {!risks || risks.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-gray-300 p-12 text-center dark:border-gray-700">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Nenhum risco identificado.
-                    </p>
-                </div>
-            ) : (
+                <EmptyState icon={AlertTriangle} title="Nenhum risco identificado" description="Riscos psicossociais identificados aparecerão aqui." />) : (
                 <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
                     <table className="w-full">
                         <thead>

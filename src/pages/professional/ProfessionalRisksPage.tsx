@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { Plus, X } from 'lucide-react'
-import { useOrganizations } from '@/hooks/queries/useOrganizations'
+import { Plus, X, AlertTriangle } from 'lucide-react'
+import { useAuth } from '@/hooks/useAuth'
 import { useRisks, useCreateRisk } from '@/hooks/queries/useDiagnosis'
 import { SectionLoader } from '@/components/ui/LoadingSpinner'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { riskLevelLabel, formatDate } from '@/utils/format'
 import type { PsychosocialRisk } from '@/types'
 
@@ -134,10 +135,7 @@ function OrgRisksBlock({ orgId, orgName }: { orgId: string; orgName: string }) {
                 </button>
             </div>
             {!risks || risks.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-gray-200 p-6 text-center">
-                    <p className="text-xs text-gray-400">Nenhum risco cadastrado.</p>
-                </div>
-            ) : (
+                <EmptyState icon={AlertTriangle} title="Nenhum risco cadastrado" description="Registre os riscos psicossociais mapeados." />) : (
                 <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
                     <table className="w-full">
                         <thead>
@@ -158,31 +156,29 @@ function OrgRisksBlock({ orgId, orgName }: { orgId: string; orgName: string }) {
 }
 
 export function ProfessionalRisksPage() {
-    const orgsQuery = useOrganizations()
+    const { profile } = useAuth()
+    const orgId = profile?.organization_id ?? ''
 
-    if (orgsQuery.isLoading) return <SectionLoader />
-    if (orgsQuery.error)
-        return <ErrorMessage message="Erro ao carregar organizações" onRetry={() => orgsQuery.refetch()} />
-
-    const orgs = orgsQuery.data ?? []
+    if (!orgId) {
+        return (
+            <div className="space-y-6 p-6">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Riscos Psicossociais</h1>
+                <div className="rounded-lg border border-dashed border-gray-300 p-12 text-center dark:border-gray-700">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Nenhuma organização associada ao seu perfil.</p>
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div className="space-y-6 p-6">
             <div>
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Riscos Psicossociais</h1>
                 <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    Riscos identificados nas organizações sob sua gestão.
+                    Riscos psicossociais identificados na sua organização.
                 </p>
             </div>
-            {orgs.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-gray-300 p-12 text-center dark:border-gray-700">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Nenhuma organização atribuída.</p>
-                </div>
-            ) : (
-                <div className="space-y-6">
-                    {orgs.map((org) => <OrgRisksBlock key={org.id} orgId={org.id} orgName={org.name} />)}
-                </div>
-            )}
+            <OrgRisksBlock orgId={orgId} orgName={profile?.name ?? ''} />
         </div>
     )
 }

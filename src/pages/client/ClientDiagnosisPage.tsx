@@ -1,7 +1,9 @@
+import { Brain } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { useDiagnoses } from '@/hooks/queries/useDiagnosis'
 import { SectionLoader } from '@/components/ui/LoadingSpinner'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { diagnosisStatusLabel, formatDate, formatPercent } from '@/utils/format'
 import type { PsychosocialDiagnosis } from '@/types'
 
@@ -58,12 +60,7 @@ export function ClientDiagnosisPage() {
             </div>
 
             {!diagnoses || diagnoses.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-gray-300 p-12 text-center dark:border-gray-700">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Nenhum diagnóstico encontrado.
-                    </p>
-                </div>
-            ) : (
+                <EmptyState icon={Brain} title="Nenhum diagnóstico" description="Os diagnósticos da sua empresa serão exibidos aqui." />) : (
                 <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
                     <table className="w-full">
                         <thead>

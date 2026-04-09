@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { Plus, X } from 'lucide-react'
-import { useOrganizations } from '@/hooks/queries/useOrganizations'
+import { Plus, X, Brain } from 'lucide-react'
+import { useAuth } from '@/hooks/useAuth'
 import { useDiagnoses, useCreateDiagnosis } from '@/hooks/queries/useDiagnosis'
 import { SectionLoader } from '@/components/ui/LoadingSpinner'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { diagnosisStatusLabel, formatDate, formatPercent } from '@/utils/format'
 import type { PsychosocialDiagnosis } from '@/types'
 
@@ -113,10 +114,7 @@ function OrgDiagBlock({ orgId, orgName }: { orgId: string; orgName: string }) {
                 </button>
             </div>
             {!diagnoses || diagnoses.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-gray-200 p-6 text-center">
-                    <p className="text-xs text-gray-400">Nenhum diagnóstico cadastrado.</p>
-                </div>
-            ) : (
+                <EmptyState icon={Brain} title="Nenhum diagnóstico" description="Inicie o primeiro diagnóstico psicossocial." />) : (
                 <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
                     <table className="w-full">
                         <thead>
@@ -137,31 +135,29 @@ function OrgDiagBlock({ orgId, orgName }: { orgId: string; orgName: string }) {
 }
 
 export function ProfessionalDiagnosisPage() {
-    const orgsQuery = useOrganizations()
+    const { profile } = useAuth()
+    const orgId = profile?.organization_id ?? ''
 
-    if (orgsQuery.isLoading) return <SectionLoader />
-    if (orgsQuery.error)
-        return <ErrorMessage message="Erro ao carregar organizações" onRetry={() => orgsQuery.refetch()} />
-
-    const orgs = orgsQuery.data ?? []
+    if (!orgId) {
+        return (
+            <div className="space-y-6 p-6">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Diagnósticos</h1>
+                <div className="rounded-lg border border-dashed border-gray-300 p-12 text-center dark:border-gray-700">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Nenhuma organização associada ao seu perfil.</p>
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div className="space-y-6 p-6">
             <div>
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Diagnósticos</h1>
                 <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    Diagnósticos psicossociais das organizações sob sua gestão.
+                    Diagnósticos psicossociais da sua organização.
                 </p>
             </div>
-            {orgs.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-gray-300 p-12 text-center dark:border-gray-700">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Nenhuma organização atribuída.</p>
-                </div>
-            ) : (
-                <div className="space-y-6">
-                    {orgs.map((org) => <OrgDiagBlock key={org.id} orgId={org.id} orgName={org.name} />)}
-                </div>
-            )}
+            <OrgDiagBlock orgId={orgId} orgName={profile?.name ?? ''} />
         </div>
     )
 }
