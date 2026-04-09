@@ -1,4 +1,5 @@
 import { Menu } from "lucide-react"
+import { NotificationsDropdown } from "@/components/layout/NotificationsDropdown"
 
 interface HeaderProps {
     onMenuClick: () => void
@@ -18,6 +19,9 @@ export function Header({ onMenuClick, title }: HeaderProps) {
             {title && (
                 <p className="text-sm text-gray-500 hidden lg:block">{title}</p>
             )}
+            <div className="ml-auto">
+                <NotificationsDropdown />
+            </div>
         </header>
     )
 }
