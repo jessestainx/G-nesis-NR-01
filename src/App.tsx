@@ -21,6 +21,7 @@ import { FinancePage } from '@/pages/genesis/FinancePage'
 import { DiagnosisPage } from '@/pages/genesis/DiagnosisPage'
 import { ActionPlansPage } from '@/pages/genesis/ActionPlansPage'
 import { AuditPage } from '@/pages/genesis/AuditPage'
+import { PulsePage } from '@/pages/genesis/PulsePage'
 
 import { ClientOverview } from '@/pages/client/ClientOverview'
 import { ClientDiagnosisPage } from '@/pages/client/ClientDiagnosisPage'
@@ -78,6 +79,7 @@ export default function App() {
                             <Route path="crm" element={<CrmPage />} />
                             <Route path="finance" element={<FinancePage />} />
                             <Route path="audit" element={<AuditPage />} />
+                            <Route path="pulse" element={<PulsePage />} />
                         </Route>
 
                         {/* Cliente Executivo */}

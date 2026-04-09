@@ -28,6 +28,7 @@ const genesisNav: NavSection[] = [
     { title: "NR-01", items: [
         { label: "Diagnósticos", to: "/dashboard/genesis/diagnosis", icon: ClipboardCheck },
         { label: "Planos de Ação", to: "/dashboard/genesis/action-plans", icon: BadgeCheck },
+        { label: "Pesquisas de Pulso", to: "/dashboard/genesis/pulse", icon: Activity },
     ]},
     { title: "COMERCIAL", items: [
         { label: "CRM", to: "/dashboard/genesis/crm", icon: Users },

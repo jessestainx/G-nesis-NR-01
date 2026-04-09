@@ -126,6 +126,14 @@ export interface Document {
 }
 
 // ─── Pesquisa de Pulso ────────────────────────────────────────────────────────
+export interface PulseQuestion {
+    id: string
+    text: string
+    type: 'scale' | 'yesno' | 'text'
+    min?: number
+    max?: number
+}
+
 export interface PulseSurvey {
     id: string
     organization_id: string
@@ -135,8 +143,17 @@ export interface PulseSurvey {
     closed_at: string | null
     total_invited: number
     total_responded: number
+    questions: { questions: PulseQuestion[] }
     created_by: string
     created_at: string
+}
+
+export interface PulseResponse {
+    id: string
+    survey_id: string
+    respondent_id: string
+    answers: Record<string, string | number | boolean>
+    submitted_at: string
 }
 
 // ─── CRM ──────────────────────────────────────────────────────────────────────
