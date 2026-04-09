@@ -1,22 +1,23 @@
 import type { ComponentType } from 'react'
 import { useAuth } from '@/hooks/useAuth'
-import { useOrganizations } from '@/hooks/queries/useOrganizations'
+import { useOrganization } from '@/hooks/queries/useOrganizations'
+import { useDiagnoses, useRisks } from '@/hooks/queries/useDiagnosis'
+import { useActionPlans } from '@/hooks/queries/useActionPlans'
 import { SectionLoader } from '@/components/ui/LoadingSpinner'
-import { ErrorMessage } from '@/components/ui/ErrorMessage'
-import { Building2, ClipboardCheck, BadgeCheck } from 'lucide-react'
-import type { Organization } from '@/types'
+import { Building2, ClipboardCheck, AlertTriangle, ListChecks } from 'lucide-react'
 
 interface KpiCardProps {
     title: string
-    value: number
+    value: number | string
     icon: ComponentType<{ className?: string }>
-    color: 'indigo' | 'emerald' | 'amber'
+    color: 'indigo' | 'emerald' | 'amber' | 'rose'
 }
 
 const kpiColors = {
     indigo: 'bg-indigo-100 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-400',
     emerald: 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400',
     amber: 'bg-amber-100 text-amber-600 dark:bg-amber-950 dark:text-amber-400',
+    rose: 'bg-rose-100 text-rose-600 dark:bg-rose-950 dark:text-rose-400',
 }
 
 function KpiCard({ title, value, icon: Icon, color }: KpiCardProps) {
@@ -35,98 +36,110 @@ function KpiCard({ title, value, icon: Icon, color }: KpiCardProps) {
     )
 }
 
-function OrgCard({ org }: { org: Organization }) {
-    const isActive = org.status === 'active'
-    return (
-        <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <div className="rounded-lg bg-indigo-100 p-2 dark:bg-indigo-950">
-                        <Building2 className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-                    </div>
-                    <div>
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">{org.name}</p>
-                        {org.employee_count != null && (
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                                {org.employee_count} colaboradores
-                            </p>
-                        )}
-                    </div>
-                </div>
-                <span
-                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${isActive ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'}`}
-                >
-                    {isActive ? 'Ativo' : org.status}
-                </span>
-            </div>
-        </div>
-    )
-}
-
 export function ProfessionalOverview() {
     const { profile } = useAuth()
-    const orgsQuery = useOrganizations()
+    const orgId = profile?.organization_id ?? ''
 
-    if (orgsQuery.isLoading) return <SectionLoader />
+    const orgQuery = useOrganization(orgId)
+    const diagnosesQuery = useDiagnoses(orgId)
+    const actionPlansQuery = useActionPlans(orgId)
+    const risksQuery = useRisks(orgId)
 
-    const orgs = orgsQuery.data ?? []
-    const activeOrgs = orgs.filter((o) => o.status === 'active')
+    const isLoading = orgQuery.isLoading || diagnosesQuery.isLoading || actionPlansQuery.isLoading || risksQuery.isLoading
+
+    if (!orgId) {
+        return (
+            <div className="space-y-6 p-6">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    Olá, {profile?.name ?? 'Profissional'}
+                </h1>
+                <div className="rounded-lg border border-dashed border-gray-300 p-12 text-center dark:border-gray-700">
+                    <Building2 className="mx-auto mb-3 h-8 w-8 text-gray-300 dark:text-gray-600" />
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Nenhuma organização associada ao seu perfil.
+                    </p>
+                </div>
+            </div>
+        )
+    }
+
+    if (isLoading) return <SectionLoader />
+
+    const org = orgQuery.data
+    const diagnoses = diagnosesQuery.data ?? []
+    const actionPlans = actionPlansQuery.data ?? []
+    const risks = risksQuery.data ?? []
+
+    const openPlans = actionPlans.filter((p) => p.status === 'pending' || p.status === 'in_progress')
+    const highRisks = risks.filter((r) => r.level === 'high' || r.level === 'critical')
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 p-6">
             <div>
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                     Olá, {profile?.name ?? 'Profissional'}
                 </h1>
                 <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    Visão geral das organizações sob sua gestão.
+                    {org ? (
+                        <>Visão geral de <span className="font-medium text-gray-700 dark:text-gray-300">{org.name}</span></>
+                    ) : 'Visão geral da sua organização'}
                 </p>
             </div>
 
-            {orgsQuery.error && (
-                <ErrorMessage
-                    message="Erro ao carregar organizações"
-                    onRetry={() => orgsQuery.refetch()}
-                />
-            )}
-
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <KpiCard
-                    title="Organizações"
-                    value={orgs.length}
-                    icon={Building2}
+                    title="Diagnósticos"
+                    value={diagnoses.length}
+                    icon={ClipboardCheck}
                     color="indigo"
                 />
                 <KpiCard
-                    title="Ativas"
-                    value={activeOrgs.length}
-                    icon={ClipboardCheck}
+                    title="Planos de Ação"
+                    value={actionPlans.length}
+                    icon={ListChecks}
                     color="emerald"
                 />
                 <KpiCard
-                    title="Em acompanhamento"
-                    value={activeOrgs.length}
-                    icon={BadgeCheck}
+                    title="Em Andamento"
+                    value={openPlans.length}
+                    icon={Building2}
                     color="amber"
+                />
+                <KpiCard
+                    title="Riscos Altos"
+                    value={highRisks.length}
+                    icon={AlertTriangle}
+                    color="rose"
                 />
             </div>
 
-            {orgs.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-gray-300 p-12 text-center dark:border-gray-700">
-                    <Building2 className="mx-auto mb-3 h-8 w-8 text-gray-300 dark:text-gray-600" />
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Nenhuma organização atribuída.
-                    </p>
-                </div>
-            ) : (
-                <div>
-                    <h2 className="mb-3 text-sm font-semibold text-gray-900 dark:text-white">
-                        Organizações ({orgs.length})
+            {/* Resumo da organização */}
+            {org && (
+                <div className="rounded-lg border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
+                    <h2 className="mb-4 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        Organização
                     </h2>
-                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                        {orgs.map((org) => (
-                            <OrgCard key={org.id} org={org} />
-                        ))}
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 text-sm">
+                        <div>
+                            <p className="text-xs text-gray-400">Nome</p>
+                            <p className="font-medium text-gray-900 dark:text-white">{org.name}</p>
+                        </div>
+                        <div>
+                            <p className="text-xs text-gray-400">CNPJ</p>
+                            <p className="font-medium text-gray-900 dark:text-white">{org.cnpj ?? '—'}</p>
+                        </div>
+                        <div>
+                            <p className="text-xs text-gray-400">Colaboradores</p>
+                            <p className="font-medium text-gray-900 dark:text-white">
+                                {org.employee_count ?? '—'}
+                            </p>
+                        </div>
+                        <div>
+                            <p className="text-xs text-gray-400">Status</p>
+                            <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${org.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600'}`}>
+                                {org.status === 'active' ? 'Ativo' : org.status}
+                            </span>
+                        </div>
                     </div>
                 </div>
             )}

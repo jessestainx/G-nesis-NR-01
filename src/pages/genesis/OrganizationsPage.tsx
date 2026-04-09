@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Pencil, Plus, X } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import { Pencil, Plus, X, Search } from 'lucide-react'
 import type { Organization } from '@/types'
 import {
     useOrganizations,
@@ -297,7 +297,18 @@ function OrgRow({ org, onEdit }: { org: Organization; onEdit: (o: Organization) 
 
 export function OrganizationsPage() {
     const { data: orgs, isLoading, error, refetch } = useOrganizations()
-    const pg = usePagination(orgs, 15)
+    const [search, setSearch] = useState('')
+    const filtered = useMemo(() => {
+        if (!orgs) return []
+        const q = search.toLowerCase()
+        if (!q) return orgs
+        return orgs.filter((o) =>
+            o.name.toLowerCase().includes(q) ||
+            (o.cnpj ?? '').includes(q) ||
+            (o.industry ?? '').toLowerCase().includes(q)
+        )
+    }, [orgs, search])
+    const pg = usePagination(filtered, 15)
     const [modal, setModal] = useState<{ open: boolean; org: Organization | null }>({
         open: false,
         org: null,
@@ -335,6 +346,18 @@ export function OrganizationsPage() {
                     <Plus className="h-4 w-4" />
                     Nova organização
                 </button>
+            </div>
+
+            {/* Busca */}
+            <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <input
+                    type="text"
+                    placeholder="Buscar por nome, CNPJ ou setor…"
+                    value={search}
+                    onChange={(e) => { setSearch(e.target.value); pg.goTo(1) }}
+                    className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                />
             </div>
 
             {!orgs || orgs.length === 0 ? (

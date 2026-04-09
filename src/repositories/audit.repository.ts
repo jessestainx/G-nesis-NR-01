@@ -47,6 +47,13 @@ export class AuditRepository extends BaseRepository<AuditLog> {
             .order('created_at', { ascending: false })
         return { data: (data as AuditLog[]) ?? [], error: formatError(error), count }
     }
+
+    async findAllLogs(limit = 200): Promise<QueryListResult<AuditLog>> {
+        const { data, error, count } = await db
+            .from('audit_logs').select('*', { count: 'exact' })
+            .order('created_at', { ascending: false }).limit(limit)
+        return { data: (data as AuditLog[]) ?? [], error: formatError(error), count }
+    }
 }
 
 export const auditRepository = new AuditRepository()

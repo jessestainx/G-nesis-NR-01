@@ -26,3 +26,11 @@ export function useOrgAuditLogs(organizationId: string) {
         select: (res) => res.data,
     })
 }
+
+export function useAllAuditLogs() {
+    return useQuery({
+        queryKey: [...auditKeys.all, 'all'],
+        queryFn: () => auditRepository.findAllLogs(200),
+        select: (res) => res.data,
+    })
+}
