@@ -7,6 +7,8 @@ import {
     useUpdateOrganization,
 } from '@/hooks/queries/useOrganizations'
 import { SectionLoader } from '@/components/ui/LoadingSpinner'
+import { PaginationBar } from '@/components/ui/PaginationBar'
+import { usePagination } from '@/hooks/usePagination'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import { formatDate, formatCnpj } from '@/utils/format'
 
@@ -295,6 +297,7 @@ function OrgRow({ org, onEdit }: { org: Organization; onEdit: (o: Organization) 
 
 export function OrganizationsPage() {
     const { data: orgs, isLoading, error, refetch } = useOrganizations()
+    const pg = usePagination(orgs, 15)
     const [modal, setModal] = useState<{ open: boolean; org: Organization | null }>({
         open: false,
         org: null,
@@ -363,11 +366,12 @@ export function OrganizationsPage() {
                             </tr>
                         </thead>
                         <tbody>
-                            {orgs.map((org) => (
+                            {pg.paged.map((org) => (
                                 <OrgRow key={org.id} org={org} onEdit={openEdit} />
                             ))}
                         </tbody>
                     </table>
+                    <PaginationBar page={pg.page} totalPages={pg.totalPages} total={pg.total} pageSize={pg.pageSize} hasPrev={pg.hasPrev} hasNext={pg.hasNext} onPrev={pg.prev} onNext={pg.next} />
                 </div>
             )}
         </div>

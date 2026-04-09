@@ -4,6 +4,8 @@ import type { Profile, UserRole } from '@/types'
 import { useOrganizationProfiles, useInviteUser } from '@/hooks/queries/useProfiles'
 import { useOrganizations } from '@/hooks/queries/useOrganizations'
 import { SectionLoader } from '@/components/ui/LoadingSpinner'
+import { PaginationBar } from '@/components/ui/PaginationBar'
+import { usePagination } from '@/hooks/usePagination'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import { formatDate, roleLabel } from '@/utils/format'
 
@@ -134,6 +136,7 @@ function UserRow({ profile }: { profile: Profile }) {
 
 function OrgUsersBlock({ orgId, orgName }: { orgId: string; orgName: string }) {
     const { data: profiles, isLoading, error, refetch } = useOrganizationProfiles(orgId)
+    const pg = usePagination(profiles, 10)
     const [inviting, setInviting] = useState(false)
 
     if (isLoading) return <SectionLoader />
@@ -165,9 +168,10 @@ function OrgUsersBlock({ orgId, orgName }: { orgId: string; orgName: string }) {
                             </tr>
                         </thead>
                         <tbody>
-                            {profiles.map((p) => <UserRow key={p.id} profile={p} />)}
+                            {pg.paged.map((p) => <UserRow key={p.id} profile={p} />)}
                         </tbody>
                     </table>
+                    <PaginationBar page={pg.page} totalPages={pg.totalPages} total={pg.total} pageSize={pg.pageSize} hasPrev={pg.hasPrev} hasNext={pg.hasNext} onPrev={pg.prev} onNext={pg.next} />
                 </div>
             </div>
         </>
