@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Pencil, Plus, X, Search } from 'lucide-react'
+import { Pencil, Plus, X, Search, Building2 } from 'lucide-react'
 import type { Organization } from '@/types'
 import {
     useOrganizations,
@@ -7,9 +7,10 @@ import {
     useUpdateOrganization,
 } from '@/hooks/queries/useOrganizations'
 import { SectionLoader } from '@/components/ui/LoadingSpinner'
-import { PaginationBar } from '@/components/ui/PaginationBar'
+import { Pagination } from '@/components/ui/Pagination'
 import { usePagination } from '@/hooks/usePagination'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { formatDate, formatCnpj } from '@/utils/format'
 
 // ─── Labels ───────────────────────────────────────────────────────────────────
@@ -361,18 +362,13 @@ export function OrganizationsPage() {
             </div>
 
             {!orgs || orgs.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-gray-300 py-16 text-center dark:border-gray-700">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Nenhuma organização cadastrada ainda.
-                    </p>
-                    <button
-                        onClick={openCreate}
-                        className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
-                    >
-                        <Plus className="h-4 w-4" />
-                        Criar primeira organização
-                    </button>
-                </div>
+                <EmptyState
+                    icon={Building2}
+                    title="Nenhuma organização cadastrada"
+                    description="Crie a primeira organização para começar"
+                    actionLabel="Nova organização"
+                    onAction={openCreate}
+                />
             ) : (
                 <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
                     <table className="w-full text-left">
@@ -394,7 +390,7 @@ export function OrganizationsPage() {
                             ))}
                         </tbody>
                     </table>
-                    <PaginationBar page={pg.page} totalPages={pg.totalPages} total={pg.total} pageSize={pg.pageSize} hasPrev={pg.hasPrev} hasNext={pg.hasNext} onPrev={pg.prev} onNext={pg.next} />
+                    <Pagination page={pg.page} pageSize={15} total={filtered.length} onPageChange={pg.goTo} />
                 </div>
             )}
         </div>

@@ -4,7 +4,7 @@ import type { Profile, UserRole } from '@/types'
 import { useOrganizationProfiles, useInviteUser } from '@/hooks/queries/useProfiles'
 import { useOrganizations } from '@/hooks/queries/useOrganizations'
 import { SectionLoader } from '@/components/ui/LoadingSpinner'
-import { PaginationBar } from '@/components/ui/PaginationBar'
+import { Pagination } from '@/components/ui/Pagination'
 import { usePagination } from '@/hooks/usePagination'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import { formatDate, roleLabel } from '@/utils/format'
@@ -171,7 +171,7 @@ function OrgUsersBlock({ orgId, orgName }: { orgId: string; orgName: string }) {
                             {pg.paged.map((p) => <UserRow key={p.id} profile={p} />)}
                         </tbody>
                     </table>
-                    <PaginationBar page={pg.page} totalPages={pg.totalPages} total={pg.total} pageSize={pg.pageSize} hasPrev={pg.hasPrev} hasNext={pg.hasNext} onPrev={pg.prev} onNext={pg.next} />
+                    <Pagination page={pg.page} pageSize={10} total={profiles?.length ?? 0} onPageChange={pg.goTo} />
                 </div>
             </div>
         </>

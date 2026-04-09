@@ -2,11 +2,12 @@ import { useState, useMemo } from 'react'
 import type { AuditLog } from '@/types'
 import { useAllAuditLogs } from '@/hooks/queries/useAudit'
 import { usePagination } from '@/hooks/usePagination'
-import { PaginationBar } from '@/components/ui/PaginationBar'
+import { Pagination } from '@/components/ui/Pagination'
 import { SectionLoader } from '@/components/ui/LoadingSpinner'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import { formatDateTime } from '@/utils/format'
-import { Search, RefreshCw } from 'lucide-react'
+import { Search, RefreshCw, ShieldCheck } from 'lucide-react'
+import { EmptyState } from '@/components/ui/EmptyState'
 
 const ENTITY_TYPES = [
     'organizations',
@@ -72,7 +73,7 @@ export function AuditPage() {
         })
     }, [logs, entityFilter, search])
 
-    const { paged, page, goTo, totalPages } = usePagination(filtered, 20)
+    const { paged, page, goTo } = usePagination(filtered, 20)
 
     return (
         <div className="space-y-6 p-6">
@@ -132,7 +133,7 @@ export function AuditPage() {
                         </p>
                     </div>
                     {filtered.length === 0 ? (
-                        <p className="px-4 py-6 text-sm text-gray-500">Nenhum log encontrado.</p>
+                        <div className="p-4"><EmptyState icon={ShieldCheck} title="Nenhum log encontrado para este filtro" description="Ajuste os filtros ou aguarde novas atividades." /></div>
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
@@ -152,16 +153,7 @@ export function AuditPage() {
                             </table>
                         </div>
                     )}
-                    <PaginationBar
-                        page={page}
-                        totalPages={totalPages}
-                        total={filtered.length}
-                        pageSize={20}
-                        hasPrev={page > 1}
-                        hasNext={page < totalPages}
-                        onPrev={() => goTo(page - 1)}
-                        onNext={() => goTo(page + 1)}
-                    />
+                    <Pagination page={page} pageSize={20} total={filtered.length} onPageChange={goTo} />
                 </div>
             )}
         </div>

@@ -10,6 +10,10 @@ import {
 import { SectionLoader } from '@/components/ui/LoadingSpinner'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import { formatDate, formatCurrency, crmStageLabel, contractStatusLabel } from '@/utils/format'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { Pagination } from '@/components/ui/Pagination'
+import { usePagination } from '@/hooks/usePagination'
+import { UserSearch, FileText } from 'lucide-react'
 
 const stageColor: Record<CrmContact['stage'], string> = {
     lead: 'bg-gray-100 text-gray-600',
@@ -155,6 +159,7 @@ function ContractRow({ contract }: { contract: Contract }) {
 
 function ContactsTable({ onNew }: { onNew: () => void }) {
     const { data: contacts, isLoading, error, refetch } = useCrmContacts()
+    const pg = usePagination(contacts, 15)
     if (isLoading) return <SectionLoader />
     if (error) return <ErrorMessage message={error instanceof Error ? error.message : 'Erro'} onRetry={() => void refetch()} />
 
@@ -171,8 +176,9 @@ function ContactsTable({ onNew }: { onNew: () => void }) {
                 </button>
             </div>
             {!contacts || contacts.length === 0 ? (
-                <p className="px-4 py-6 text-sm text-gray-500">Nenhum contato cadastrado.</p>
+                <div className="p-4"><EmptyState icon={UserSearch} title="Nenhum contato no CRM" description="Adicione o primeiro contato para começar a gerenciar relacionamentos." actionLabel="Novo Contato" onAction={onNew} /></div>
             ) : (
+                <>
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
                         <thead className="bg-gray-50 text-xs uppercase text-gray-500">
@@ -182,9 +188,11 @@ function ContactsTable({ onNew }: { onNew: () => void }) {
                                 <th className="px-4 py-2">Criado em</th><th className="px-4 py-2">Ação</th>
                             </tr>
                         </thead>
-                        <tbody>{contacts.map((c) => <ContactRow key={c.id} contact={c} />)}</tbody>
+                        <tbody>{pg.paged.map((c) => <ContactRow key={c.id} contact={c} />)}</tbody>
                     </table>
                 </div>
+                <Pagination page={pg.page} pageSize={15} total={contacts.length} onPageChange={pg.goTo} />
+                </>
             )}
         </div>
     )
@@ -202,7 +210,7 @@ function ContractsTable() {
                 <p className="text-xs text-gray-400">{contracts?.length ?? 0} contrato(s)</p>
             </div>
             {!contracts || contracts.length === 0 ? (
-                <p className="px-4 py-6 text-sm text-gray-500">Nenhum contrato ativo.</p>
+                <div className="p-4"><EmptyState icon={FileText} title="Nenhum contrato ativo" description="Contratos ativos aparecerão aqui." /></div>
             ) : (
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
