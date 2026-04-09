@@ -31,3 +31,18 @@ export function useCreateTraining() {
         },
     })
 }
+
+export function useUpdateTrainingStatus() {
+    const qc = useQueryClient()
+    const { user } = useAuth()
+    return useMutation({
+        mutationFn: (vars: {
+            id: string
+            organizationId: string
+            status: Training['status']
+        }) => trainingService.updateStatus(vars.id, vars.organizationId, vars.status, user!.id),
+        onSuccess: (_data, variables) => {
+            void qc.invalidateQueries({ queryKey: trainingKeys.byOrg(variables.organizationId) })
+        },
+    })
+}

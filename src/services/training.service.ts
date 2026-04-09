@@ -25,4 +25,25 @@ export const trainingService = {
         }
         return result
     },
+
+    async updateStatus(
+        id: string,
+        organizationId: string,
+        status: Training['status'],
+        actorId: string,
+    ): Promise<QueryResult<Training>> {
+        const completedDate = status === 'completed' ? new Date().toISOString() : null
+        const result = await trainingRepository.updateStatus(id, status, completedDate)
+        if (result.data) {
+            await auditRepository.log({
+                userId: actorId,
+                action: 'training.update_status',
+                entityType: 'trainings',
+                entityId: id,
+                organizationId,
+                metadata: { status },
+            })
+        }
+        return result
+    },
 }

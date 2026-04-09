@@ -20,6 +20,18 @@ export class TrainingRepository extends BaseRepository<Training> {
             .from('trainings').insert(payload).select().single()
         return { data: data as Training | null, error: formatError(error) }
     }
+
+    async updateStatus(
+        id: string,
+        status: Training['status'],
+        completedDate?: string | null,
+    ): Promise<QueryResult<Training>> {
+        const patch: Partial<Training> = { status }
+        if (completedDate !== undefined) patch.completed_date = completedDate
+        const { data, error } = await db
+            .from('trainings').update(patch).eq('id', id).select().single()
+        return { data: data as Training | null, error: formatError(error) }
+    }
 }
 
 export const trainingRepository = new TrainingRepository()
