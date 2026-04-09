@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Plus, X, UserPlus } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import { Plus, X, UserPlus, Search } from 'lucide-react'
 import type { Profile, UserRole } from '@/types'
 import { useOrganizationProfiles, useInviteUser } from '@/hooks/queries/useProfiles'
 import { useOrganizations } from '@/hooks/queries/useOrganizations'
@@ -183,6 +183,14 @@ function OrgUsersBlock({ orgId, orgName }: { orgId: string; orgName: string }) {
 export function UsersPage() {
     const { data: orgs, isLoading, error, refetch } = useOrganizations()
     const [showInvite, setShowInvite] = useState(false)
+    const [search, setSearch] = useState('')
+
+    const filteredOrgs = useMemo(() => {
+        if (!orgs) return []
+        const q = search.trim().toLowerCase()
+        if (!q) return orgs
+        return orgs.filter((o) => o.name.toLowerCase().includes(q))
+    }, [orgs, search])
 
     if (isLoading) return <SectionLoader />
     if (error) return <ErrorMessage message={error instanceof Error ? error.message : 'Erro'} onRetry={() => void refetch()} />
@@ -201,13 +209,29 @@ export function UsersPage() {
                         <Plus size={14} /> Convidar Usuário
                     </button>
                 </div>
+
+                <div className="relative">
+                    <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input
+                        type="text"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Buscar por organização…"
+                        className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-9 pr-4 text-sm shadow-sm focus:border-[#00A898] focus:outline-none focus:ring-1 focus:ring-[#00A898] dark:border-gray-600 dark:bg-gray-900 dark:text-white"
+                    />
+                </div>
+
                 {!orgs || orgs.length === 0 ? (
                     <div className="rounded-lg border border-dashed border-gray-300 py-12 text-center">
                         <p className="text-sm text-gray-500">Nenhuma organização cadastrada.</p>
                     </div>
+                ) : filteredOrgs.length === 0 ? (
+                    <div className="rounded-lg border border-dashed border-gray-300 py-12 text-center">
+                        <p className="text-sm text-gray-500">Nenhuma organização encontrada para &quot;{search}&quot;.</p>
+                    </div>
                 ) : (
                     <div className="space-y-4">
-                        {orgs.map((org) => (
+                        {filteredOrgs.map((org) => (
                             <OrgUsersBlock key={org.id} orgId={org.id} orgName={org.name} />
                         ))}
                     </div>

@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Plus, X } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import { Plus, X, Search } from 'lucide-react'
 import type { PsychosocialDiagnosis, PsychosocialRisk } from '@/types'
 import { useOrganizations } from '@/hooks/queries/useOrganizations'
 import {
@@ -206,6 +206,15 @@ function OrgDiagnosisBlock({ orgId, orgName }: { orgId: string; orgName: string 
 
 export function DiagnosisPage() {
     const { data: orgs, isLoading, error, refetch } = useOrganizations()
+    const [search, setSearch] = useState('')
+
+    const filteredOrgs = useMemo(() => {
+        if (!orgs) return []
+        const q = search.trim().toLowerCase()
+        if (!q) return orgs
+        return orgs.filter((o) => o.name.toLowerCase().includes(q))
+    }, [orgs, search])
+
     if (isLoading) return <SectionLoader />
     if (error) return <ErrorMessage message={error instanceof Error ? error.message : 'Erro'} onRetry={() => void refetch()} />
 
@@ -215,13 +224,29 @@ export function DiagnosisPage() {
                 <h1 className="text-2xl font-bold text-gray-900">Diagnósticos</h1>
                 <p className="mt-1 text-sm text-gray-500">Diagnósticos psicossociais e riscos por organização</p>
             </div>
+
+            <div className="relative">
+                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                    type="text"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Buscar por organização…"
+                    className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-9 pr-4 text-sm shadow-sm focus:border-[#00A898] focus:outline-none focus:ring-1 focus:ring-[#00A898] dark:border-gray-600 dark:bg-gray-900 dark:text-white"
+                />
+            </div>
+
             {!orgs || orgs.length === 0 ? (
                 <div className="rounded-lg border border-dashed border-gray-300 py-12 text-center">
                     <p className="text-sm text-gray-500">Nenhuma organização cadastrada.</p>
                 </div>
+            ) : filteredOrgs.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-gray-300 py-12 text-center">
+                    <p className="text-sm text-gray-500">Nenhuma organização encontrada para &quot;{search}&quot;.</p>
+                </div>
             ) : (
                 <div className="space-y-8">
-                    {orgs.map((org) => <OrgDiagnosisBlock key={org.id} orgId={org.id} orgName={org.name} />)}
+                    {filteredOrgs.map((org) => <OrgDiagnosisBlock key={org.id} orgId={org.id} orgName={org.name} />)}
                 </div>
             )}
         </div>
