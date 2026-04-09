@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
-import { useTrainings, useCreateTraining } from '@/hooks/queries/useTrainings'
+import { useTrainings, useCreateTraining, useUpdateTrainingStatus } from '@/hooks/queries/useTrainings'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { SectionLoader } from '@/components/ui/LoadingSpinner'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import { formatDate } from '@/utils/format'
-import { GraduationCap, Plus, X, Users, CalendarDays } from 'lucide-react'
+import { GraduationCap, Plus, X, Users, CalendarDays, ChevronRight } from 'lucide-react'
 import type { Training } from '@/types'
 
 const TYPE_LABEL: Record<Training['type'], string> = {
@@ -27,19 +28,27 @@ const STATUS_COLORS: Record<Training['status'], string> = {
     cancelled: 'bg-rose-100 text-rose-700',
 }
 
-function TrainingCard({ t }: { t: Training }) {
+const STATUS_NEXT: Partial<Record<Training['status'], Training['status']>> = {
+    scheduled: 'in_progress',
+    in_progress: 'completed',
+}
+
+function TrainingCard({ t, orgId }: { t: Training; orgId: string }) {
+    const advance = useUpdateTrainingStatus()
+    const next = STATUS_NEXT[t.status]
+
     return (
-        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
             <div className="mb-3 flex items-start justify-between gap-2">
-                <h3 className="text-sm font-semibold text-gray-900">{t.title}</h3>
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{t.title}</h3>
                 <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[t.status]}`}>
                     {STATUS_LABEL[t.status]}
                 </span>
             </div>
             {t.description && (
-                <p className="mb-3 text-xs text-gray-500 line-clamp-2">{t.description}</p>
+                <p className="mb-3 text-xs text-gray-500 line-clamp-2 dark:text-gray-400">{t.description}</p>
             )}
-            <div className="flex flex-wrap gap-3 text-xs text-gray-500">
+            <div className="flex flex-wrap gap-3 text-xs text-gray-500 dark:text-gray-400">
                 <span className="flex items-center gap-1">
                     <GraduationCap size={12} />
                     {TYPE_LABEL[t.type]}
@@ -56,10 +65,21 @@ function TrainingCard({ t }: { t: Training }) {
                         {formatDate(t.completed_date ?? t.scheduled_date)}
                     </span>
                 )}
-                <span className="ml-auto font-medium text-gray-700">
+                <span className="ml-auto font-medium text-gray-700 dark:text-gray-300">
                     {t.participant_count} participante{t.participant_count !== 1 ? 's' : ''}
                 </span>
             </div>
+            {next && (
+                <div className="mt-3 border-t border-gray-100 pt-3 dark:border-gray-700">
+                    <button
+                        onClick={() => void advance.mutate({ id: t.id, organizationId: orgId, status: next })}
+                        disabled={advance.isPending}
+                        className="flex w-full items-center justify-center gap-1 rounded-md border border-gray-200 py-1.5 text-xs text-gray-600 hover:border-[#00A898] hover:text-[#00A898] disabled:opacity-40 dark:border-gray-700 dark:text-gray-400"
+                    >
+                        {STATUS_LABEL[next]} <ChevronRight size={11} />
+                    </button>
+                </div>
+            )}
         </div>
     )
 }
@@ -194,18 +214,18 @@ export function ClientTrainingsPage() {
             </div>
 
             {!trainings || trainings.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-gray-300 p-16 text-center">
-                    <GraduationCap className="mx-auto mb-4 h-10 w-10 text-gray-300" />
-                    <p className="text-base font-medium text-gray-700">Nenhum treinamento cadastrado</p>
-                    <p className="mt-1 text-sm text-gray-500">Clique em "Novo Treinamento" para começar.</p>
-                </div>
+                <EmptyState
+                    icon={GraduationCap}
+                    title="Nenhum treinamento cadastrado"
+                    description='Clique em "Novo Treinamento" para começar.'
+                />
             ) : (
                 <div className="space-y-6">
                     {byStatus.in_progress.length > 0 && (
                         <section>
                             <h2 className="mb-3 text-sm font-semibold text-indigo-700">Em andamento</h2>
                             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                                {byStatus.in_progress.map((t) => <TrainingCard key={t.id} t={t} />)}
+                                {byStatus.in_progress.map((t) => <TrainingCard key={t.id} t={t} orgId={orgId} />)}
                             </div>
                         </section>
                     )}
@@ -213,7 +233,7 @@ export function ClientTrainingsPage() {
                         <section>
                             <h2 className="mb-3 text-sm font-semibold text-blue-700">Agendados</h2>
                             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                                {byStatus.scheduled.map((t) => <TrainingCard key={t.id} t={t} />)}
+                                {byStatus.scheduled.map((t) => <TrainingCard key={t.id} t={t} orgId={orgId} />)}
                             </div>
                         </section>
                     )}
@@ -221,7 +241,7 @@ export function ClientTrainingsPage() {
                         <section>
                             <h2 className="mb-3 text-sm font-semibold text-emerald-700">Concluídos</h2>
                             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                                {byStatus.completed.map((t) => <TrainingCard key={t.id} t={t} />)}
+                                {byStatus.completed.map((t) => <TrainingCard key={t.id} t={t} orgId={orgId} />)}
                             </div>
                         </section>
                     )}

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, X } from 'lucide-react'
+import { Plus, X, DollarSign } from 'lucide-react'
 import type { FinancialTransaction } from '@/types'
 import {
     useFinanceSummary,
@@ -7,6 +7,7 @@ import {
     useCreateTransaction,
 } from '@/hooks/queries/useFinance'
 import { SectionLoader } from '@/components/ui/LoadingSpinner'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import { formatDate, formatCurrency } from '@/utils/format'
 
@@ -188,7 +189,13 @@ function TransactionsTable({ from, to, onNew }: { from: string; to: string; onNe
                 </button>
             </div>
             {!txs || txs.length === 0 ? (
-                <p className="px-4 py-6 text-sm text-gray-500">Nenhuma transação no período.</p>
+                <div className="py-4">
+                    <EmptyState
+                        icon={DollarSign}
+                        title="Nenhuma transação no período"
+                        description="Clique em Nova Transação para registrar a primeira."
+                    />
+                </div>
             ) : (
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
