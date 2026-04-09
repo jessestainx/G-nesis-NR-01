@@ -41,6 +41,8 @@ import { ProfessionalRisksPage } from '@/pages/professional/ProfessionalRisksPag
 import { ProfessionalActionPlansPage } from '@/pages/professional/ProfessionalActionPlansPage'
 import { ProfessionalCasesPage } from '@/pages/professional/ProfessionalCasesPage'
 
+import { ProfilePage } from '@/pages/shared/ProfilePage'
+
 export default function App() {
     return (
         <QueryClientProvider client={queryClient}>
@@ -80,6 +82,7 @@ export default function App() {
                             <Route path="finance" element={<FinancePage />} />
                             <Route path="audit" element={<AuditPage />} />
                             <Route path="pulse" element={<PulsePage />} />
+                            <Route path="profile" element={<ProfilePage />} />
                         </Route>
 
                         {/* Cliente Executivo */}
@@ -98,6 +101,7 @@ export default function App() {
                             <Route path="documents" element={<ClientDocumentsPage />} />
                             <Route path="trainings" element={<ClientTrainingsPage />} />
                             <Route path="pulse" element={<ClientPulsePage />} />
+                            <Route path="profile" element={<ProfilePage />} />
                         </Route>
 
                         {/* Colaborador */}
@@ -112,6 +116,7 @@ export default function App() {
                             <Route index element={<CollaboratorOverview />} />
                             <Route path="survey" element={<CollaboratorSurveyPage />} />
                             <Route path="privacy" element={<CollaboratorPrivacyPage />} />
+                            <Route path="profile" element={<ProfilePage />} />
                         </Route>
 
                         {/* Profissional */}
@@ -128,6 +133,7 @@ export default function App() {
                             <Route path="risks" element={<ProfessionalRisksPage />} />
                             <Route path="action-plans" element={<ProfessionalActionPlansPage />} />
                             <Route path="cases" element={<ProfessionalCasesPage />} />
+                            <Route path="profile" element={<ProfilePage />} />
                         </Route>
 
                         {/* 404 */}

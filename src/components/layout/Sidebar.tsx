@@ -5,6 +5,7 @@ import {
     TrendingUp, BadgeCheck, X, AlertTriangle, BookOpen, Activity,
     Lock, ShieldAlert, UserCircle2, History, LogOut,
 } from "lucide-react"
+import { useNavigate } from "react-router-dom"
 import { useAuth } from "@/hooks/useAuth"
 import type { UserRole } from "@/types"
 
@@ -103,6 +104,8 @@ interface SidebarProps { role: UserRole; open: boolean; onClose: () => void }
 function SidebarContent({ role, onClose }: { role: UserRole; onClose: () => void }) {
     const sections = getNavSections(role)
     const { profile, signOut } = useAuth()
+    const navigate = useNavigate()
+    const profilePath = `/dashboard/${role === 'client_executive' ? 'client' : role}/profile`
 
     return (
         <div className="flex h-full flex-col bg-[#162136]">
@@ -152,13 +155,22 @@ function SidebarContent({ role, onClose }: { role: UserRole; onClose: () => void
             </nav>
             <div className="border-t border-[#1E2F4A] px-4 py-3">
                 <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#00A898]/20 text-xs font-bold text-[#00A898]">
-                        {getInitials(profile?.name)}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-white">{profile?.name ?? "Usuário"}</p>
-                        <p className="text-[10px] tracking-wider text-[#4E6B8C]">{getRoleLabel(role)}</p>
-                    </div>
+                    <button
+                        onClick={() => { navigate(profilePath); onClose() }}
+                        className="flex items-center gap-3 flex-1 min-w-0 rounded-md hover:bg-[#1E2F4A] transition-colors text-left p-1"
+                        title="Editar perfil"
+                    >
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#00A898]/20 text-xs font-bold text-[#00A898]">
+                            {profile?.avatar_url
+                                ? <img src={profile.avatar_url} alt="avatar" className="h-8 w-8 rounded-full object-cover" />
+                                : getInitials(profile?.name)
+                            }
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium text-white">{profile?.name ?? "Usuário"}</p>
+                            <p className="text-[10px] tracking-wider text-[#4E6B8C]">{getRoleLabel(role)}</p>
+                        </div>
+                    </button>
                     <button onClick={signOut} title="Sair" className="rounded-md p-1 text-[#4E6B8C] hover:text-red-400 hover:bg-[#1E2F4A] transition-colors">
                         <LogOut className="h-4 w-4" />
                     </button>
