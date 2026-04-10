@@ -6,7 +6,8 @@ import { Pagination } from '@/components/ui/Pagination'
 import { SectionLoader } from '@/components/ui/LoadingSpinner'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import { formatDateTime } from '@/utils/format'
-import { Search, RefreshCw, ShieldCheck } from 'lucide-react'
+import { Search, RefreshCw, ShieldCheck, Download } from 'lucide-react'
+import Papa from 'papaparse'
 import { EmptyState } from '@/components/ui/EmptyState'
 
 const ENTITY_TYPES = [
@@ -75,6 +76,25 @@ export function AuditPage() {
 
     const { paged, page, goTo } = usePagination(filtered, 20)
 
+    function exportLogsCSV() {
+        const rows = filtered.map((log) => ({
+            Data: log.created_at,
+            Ação: log.action,
+            Entidade: log.entity_type ?? '',
+            'ID Entidade': log.entity_id ?? '',
+            'ID Usuário': log.user_id ?? '',
+            Metadados: log.metadata ? JSON.stringify(log.metadata) : '',
+        }))
+        const csv = Papa.unparse(rows)
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `auditoria_${new Date().toISOString().slice(0, 10)}.csv`
+        a.click()
+        URL.revokeObjectURL(url)
+    }
+
     return (
         <div className="space-y-6 p-6">
             <div className="flex items-center justify-between">
@@ -84,13 +104,23 @@ export function AuditPage() {
                         Histórico de todas as ações do sistema
                     </p>
                 </div>
-                <button
-                    onClick={() => void refetch()}
-                    className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
-                >
-                    <RefreshCw className="h-3.5 w-3.5" />
-                    Atualizar
-                </button>
+                <div className="flex items-center gap-2">
+                    {filtered.length > 0 && (
+                        <button
+                            onClick={exportLogsCSV}
+                            className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                            <Download className="h-3.5 w-3.5" />
+                            Exportar CSV
+                        </button>
+                    )}
+                    <button
+                        onClick={() => void refetch()}
+                        className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                    >
+                        <RefreshCw className="h-3.5 w-3.5" />
+                        Atualizar
+                    </button>
+                </div>
             </div>
 
             {/* Filtros */}

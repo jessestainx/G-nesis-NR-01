@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { trainingService } from '@/services/training.service'
 import { useAuth } from '@/hooks/useAuth'
 import type { Training } from '@/types'
@@ -28,7 +29,9 @@ export function useCreateTraining() {
             trainingService.create(payload, user!.id),
         onSuccess: (_data, variables) => {
             void qc.invalidateQueries({ queryKey: trainingKeys.byOrg(variables.organization_id) })
+            toast.success('Treinamento criado com sucesso')
         },
+        onError: (e: Error) => toast.error(e.message || 'Erro ao criar treinamento'),
     })
 }
 
@@ -43,6 +46,8 @@ export function useUpdateTrainingStatus() {
         }) => trainingService.updateStatus(vars.id, vars.organizationId, vars.status, user!.id),
         onSuccess: (_data, variables) => {
             void qc.invalidateQueries({ queryKey: trainingKeys.byOrg(variables.organizationId) })
+            toast.success('Status atualizado')
         },
+        onError: (e: Error) => toast.error(e.message || 'Erro ao atualizar status'),
     })
 }

@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Plus, X, DollarSign } from 'lucide-react'
+import { Plus, X, DollarSign, Download } from 'lucide-react'
+import Papa from 'papaparse'
 import type { FinancialTransaction } from '@/types'
 import {
     useFinanceSummary,
@@ -157,6 +158,25 @@ function SummaryCards({ from, to }: { from: string; to: string }) {
 
 // ─── Tabela de transações ─────────────────────────────────────────────────────
 
+function exportTransactionsCSV(txs: FinancialTransaction[], from: string, to: string) {
+    const rows = txs.map((tx) => ({
+        Data: tx.reference_date,
+        Descrição: tx.description,
+        Categoria: tx.category ?? '',
+        Tipo: typeLabel[tx.type],
+        Valor: tx.amount,
+        'Organização ID': tx.organization_id ?? '',
+    }))
+    const csv = Papa.unparse(rows)
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `financeiro_${from}_${to}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+}
+
 function TransactionRow({ tx }: { tx: FinancialTransaction }) {
     return (
         <tr className="border-b border-gray-100 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800/50">
@@ -183,10 +203,19 @@ function TransactionsTable({ from, to, onNew }: { from: string; to: string; onNe
                     <h2 className="text-base font-semibold text-gray-800">Transações</h2>
                     <p className="text-xs text-gray-400 dark:text-gray-500">{txs?.length ?? 0} transação(ões) no período</p>
                 </div>
-                <button onClick={onNew}
-                    className="flex items-center gap-2 rounded-lg bg-[#162136] px-3 py-1.5 text-xs text-white hover:bg-[#1E2F4A]">
-                    <Plus size={12} /> Nova Transação
-                </button>
+                <div className="flex items-center gap-2">
+                    {txs && txs.length > 0 && (
+                        <button
+                            onClick={() => exportTransactionsCSV(txs, from, to)}
+                            className="flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800">
+                            <Download size={12} /> Exportar CSV
+                        </button>
+                    )}
+                    <button onClick={onNew}
+                        className="flex items-center gap-2 rounded-lg bg-[#162136] px-3 py-1.5 text-xs text-white hover:bg-[#1E2F4A]">
+                        <Plus size={12} /> Nova Transação
+                    </button>
+                </div>
             </div>
             {!txs || txs.length === 0 ? (
                 <div className="py-4">

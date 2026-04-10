@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { organizationService } from '@/services/organization.service'
 import { useAuth } from '@/hooks/useAuth'
 import type { Organization, OrganizationUnit } from '@/types'
@@ -51,7 +52,9 @@ export function useCreateOrganization() {
             organizationService.create(payload, user!.id),
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: orgKeys.lists() })
+            toast.success('Organização criada com sucesso')
         },
+        onError: (e) => toast.error(e instanceof Error ? e.message : 'Erro ao criar organização'),
     })
 }
 
@@ -64,7 +67,9 @@ export function useUpdateOrganization() {
         onSuccess: (_data: unknown, variables: { id: string; payload: Partial<Omit<Organization, 'id' | 'created_at'>> }) => {
             qc.invalidateQueries({ queryKey: orgKeys.detail(variables.id) })
             qc.invalidateQueries({ queryKey: orgKeys.lists() })
+            toast.success('Organização atualizada com sucesso')
         },
+        onError: (e) => toast.error(e instanceof Error ? e.message : 'Erro ao atualizar organização'),
     })
 }
 
@@ -75,7 +80,9 @@ export function useCreateUnit() {
             organizationService.createUnit(payload),
         onSuccess: (_data: unknown, variables: Omit<OrganizationUnit, 'id' | 'created_at'>) => {
             qc.invalidateQueries({ queryKey: orgKeys.units(variables.organization_id) })
+            toast.success('Unidade criada com sucesso')
         },
+        onError: (e) => toast.error(e instanceof Error ? e.message : 'Erro ao criar unidade'),
     })
 }
 
@@ -86,6 +93,8 @@ export function useDeleteUnit() {
             organizationService.deleteUnit(vars.id),
         onSuccess: (_data: unknown, variables: { id: string; organizationId: string }) => {
             qc.invalidateQueries({ queryKey: orgKeys.units(variables.organizationId) })
+            toast.success('Unidade excluída')
         },
+        onError: (e) => toast.error(e instanceof Error ? e.message : 'Erro ao excluir unidade'),
     })
 }

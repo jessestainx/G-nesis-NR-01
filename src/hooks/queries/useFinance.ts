@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { crmService } from '@/services/crm.service'
 import { financeService } from '@/services/finance.service'
 import { useAuth } from '@/hooks/useAuth'
@@ -53,7 +54,9 @@ export function useCreateCrmContact() {
             crmService.create(payload, user!.id),
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: crmKeys.list() })
+            toast.success('Contato criado com sucesso')
         },
+        onError: (e) => toast.error(e instanceof Error ? e.message : 'Erro ao criar contato'),
     })
 }
 
@@ -65,7 +68,9 @@ export function useUpdateCrmContact() {
             crmService.advanceStage(id, stage, user!.id),
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: crmKeys.all })
+            toast.success('Contato atualizado')
         },
+        onError: (e) => toast.error(e instanceof Error ? e.message : 'Erro ao atualizar contato'),
     })
 }
 
@@ -95,7 +100,9 @@ export function useCreateContract() {
             crmService.createContract(payload, user!.id),
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: crmKeys.contracts.all })
+            toast.success('Contrato criado com sucesso')
         },
+        onError: (e) => toast.error(e instanceof Error ? e.message : 'Erro ao criar contrato'),
     })
 }
 
@@ -126,6 +133,8 @@ export function useCreateTransaction() {
             financeService.create(payload, user!.id),
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: financeKeys.all })
+            toast.success('Transação registrada com sucesso')
         },
+        onError: (e) => toast.error(e instanceof Error ? e.message : 'Erro ao registrar transação'),
     })
 }

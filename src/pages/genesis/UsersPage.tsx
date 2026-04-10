@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { z } from 'zod'
 import { Plus, X, UserPlus, Search } from 'lucide-react'
 import type { Profile, UserRole } from '@/types'
 import { useOrganizationProfiles, useInviteUser } from '@/hooks/queries/useProfiles'
@@ -20,6 +21,11 @@ const roleColor: Record<UserRole, string> = {
 
 interface InviteModalProps { onClose: () => void; orgId?: string }
 
+const inviteSchema = z.object({
+    name: z.string().min(1, 'Nome é obrigatório'),
+    email: z.string().email('E-mail inválido'),
+})
+
 function InviteModal({ onClose, orgId }: InviteModalProps) {
     const { data: orgs } = useOrganizations()
     const invite = useInviteUser()
@@ -37,11 +43,10 @@ function InviteModal({ onClose, orgId }: InviteModalProps) {
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault()
-        if (!form.email.trim() || !form.name.trim()) {
-            setFieldError('Nome e e-mail são obrigatórios.'); return
-        }
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-            setFieldError('E-mail inválido.'); return
+        const result = inviteSchema.safeParse(form)
+        if (!result.success) {
+            setFieldError(result.error.issues[0]?.message ?? 'Dados inválidos.')
+            return
         }
         setFieldError(null)
         try {

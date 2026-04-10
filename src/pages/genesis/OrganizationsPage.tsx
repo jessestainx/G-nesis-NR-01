@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { z } from 'zod'
 import { Pencil, Plus, X, Search, Building2 } from 'lucide-react'
 import type { Organization } from '@/types'
 import {
@@ -57,6 +58,29 @@ const emptyForm: FormValues = {
     status: 'active',
 }
 
+// ─── Zod schema ───────────────────────────────────────────────────────────────
+
+const CNPJ_RE = /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/
+
+const orgSchema = z.object({
+    name: z.string().min(1, 'O nome é obrigatório'),
+    cnpj: z.string().refine((v) => !v || CNPJ_RE.test(v), {
+        message: 'CNPJ inválido. Use o formato 00.000.000/0001-00',
+    }),
+    responsible_email: z.string().refine((v) => !v || z.string().email().safeParse(v).success, {
+        message: 'E-mail do responsável inválido',
+    }),
+    employee_count: z.string().refine((v) => !v || /^\d+$/.test(v), {
+        message: 'Nº de funcionários deve ser um número',
+    }),
+    industry: z.string(),
+    responsible_name: z.string(),
+    plan: z.string(),
+    status: z.enum(['active', 'suspended', 'inactive']),
+})
+
+type OrgErrors = Partial<Record<keyof FormValues, string>>
+
 function orgToForm(org: Organization): FormValues {
     return {
         name: org.name,
@@ -79,7 +103,7 @@ interface OrgModalProps {
 
 function OrgModal({ initial, onClose }: OrgModalProps) {
     const [form, setForm] = useState<FormValues>(initial ? orgToForm(initial) : emptyForm)
-    const [fieldError, setFieldError] = useState<string | null>(null)
+    const [errors, setErrors] = useState<OrgErrors>({})
 
     const createMut = useCreateOrganization()
     const updateMut = useUpdateOrganization()
@@ -88,20 +112,22 @@ function OrgModal({ initial, onClose }: OrgModalProps) {
 
     function set(field: keyof FormValues, value: string) {
         setForm((f) => ({ ...f, [field]: value }))
-    }
-
-    function validate(): boolean {
-        if (!form.name.trim()) { setFieldError('O nome é obrigatório.'); return false }
-        if (form.responsible_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.responsible_email)) {
-            setFieldError('E-mail do responsável inválido.'); return false
-        }
-        setFieldError(null)
-        return true
+        if (errors[field]) setErrors((e) => ({ ...e, [field]: undefined }))
     }
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault()
-        if (!validate()) return
+        const result = orgSchema.safeParse(form)
+        if (!result.success) {
+            const fieldErrors: OrgErrors = {}
+            for (const issue of result.error.issues) {
+                const key = issue.path[0] as keyof FormValues
+                if (key) fieldErrors[key] = issue.message
+            }
+            setErrors(fieldErrors)
+            return
+        }
+        setErrors({})
         const payload = {
             name: form.name.trim(),
             cnpj: form.cnpj.trim() || null,
@@ -142,8 +168,8 @@ function OrgModal({ initial, onClose }: OrgModalProps) {
 
                 {/* Form */}
                 <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4 px-6 py-5">
-                    {(fieldError || mutError) && (
-                        <ErrorMessage message={fieldError ?? mutError?.message} />
+                    {mutError && (
+                        <ErrorMessage message={mutError?.message} />
                     )}
 
                     <div className="grid grid-cols-2 gap-4">
@@ -152,22 +178,24 @@ function OrgModal({ initial, onClose }: OrgModalProps) {
                                 Nome <span className="text-red-500">*</span>
                             </label>
                             <input
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                                className={`w-full rounded-lg border px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none dark:bg-gray-800 dark:text-white ${errors.name ? 'border-red-400 dark:border-red-500' : 'border-gray-300 dark:border-gray-700'}`}
                                 value={form.name}
                                 onChange={(e) => set('name', e.target.value)}
                                 placeholder="Empresa Ltda."
                             />
+                            {errors.name && <p className="mt-0.5 text-xs text-red-500">{errors.name}</p>}
                         </div>
 
                         <div>
                             <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">CNPJ</label>
                             <input
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                                className={`w-full rounded-lg border px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none dark:bg-gray-800 dark:text-white ${errors.cnpj ? 'border-red-400 dark:border-red-500' : 'border-gray-300 dark:border-gray-700'}`}
                                 value={form.cnpj}
                                 onChange={(e) => set('cnpj', e.target.value)}
                                 placeholder="00.000.000/0001-00"
                                 maxLength={18}
                             />
+                            {errors.cnpj && <p className="mt-0.5 text-xs text-red-500">{errors.cnpj}</p>}
                         </div>
 
                         <div>

@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { documentService } from '@/services/document.service'
 import { useAuth } from '@/hooks/useAuth'
 
@@ -34,7 +35,9 @@ export function useUploadDocument() {
             documentService.upload({ ...params, uploadedBy: user!.id }, user!.id),
         onSuccess: (_data: unknown, variables: { file: File; organizationId: string; type: string }) => {
             qc.invalidateQueries({ queryKey: documentKeys.byOrg(variables.organizationId) })
+            toast.success('Documento enviado com sucesso')
         },
+        onError: (e) => toast.error(e instanceof Error ? e.message : 'Erro ao enviar documento'),
     })
 }
 
@@ -46,6 +49,8 @@ export function useRemoveDocument() {
             documentService.remove(vars.id, vars.storagePath, vars.organizationId, user!.id),
         onSuccess: (_data: unknown, variables: { id: string; storagePath: string; organizationId: string }) => {
             qc.invalidateQueries({ queryKey: documentKeys.byOrg(variables.organizationId) })
+            toast.success('Documento excluído')
         },
+        onError: (e) => toast.error(e instanceof Error ? e.message : 'Erro ao excluir documento'),
     })
 }

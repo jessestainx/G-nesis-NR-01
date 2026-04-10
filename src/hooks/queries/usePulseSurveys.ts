@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { pulseService } from '@/services/pulse.service'
 import { useAuth } from '@/hooks/useAuth'
 import type { PulseSurvey, PulseResponse } from '@/types'
@@ -21,6 +22,7 @@ export function useAllPulseSurveys() {
             if (error) throw new Error(error)
             return data
         },
+        refetchInterval: 30_000,
     })
 }
 
@@ -34,6 +36,7 @@ export function usePulseSurveys(organizationId: string) {
             return data
         },
         enabled: !!organizationId,
+        refetchInterval: 30_000,
     })
 }
 
@@ -47,6 +50,7 @@ export function useActivePulseSurvey(organizationId: string) {
             return data
         },
         enabled: !!organizationId,
+        refetchInterval: 30_000,
     })
 }
 
@@ -82,7 +86,9 @@ export function useCreatePulseSurvey() {
         onSuccess: (_data, variables) => {
             void qc.invalidateQueries({ queryKey: pulseKeys.list() })
             void qc.invalidateQueries({ queryKey: pulseKeys.byOrg(variables.organization_id) })
+            toast.success('Pesquisa criada com sucesso')
         },
+        onError: (e: Error) => toast.error(e.message || 'Erro ao criar pesquisa'),
     })
 }
 
@@ -97,7 +103,9 @@ export function useUpdateSurveyStatus() {
             void qc.invalidateQueries({ queryKey: pulseKeys.list() })
             void qc.invalidateQueries({ queryKey: pulseKeys.byOrg(variables.orgId) })
             void qc.invalidateQueries({ queryKey: pulseKeys.active(variables.orgId) })
+            toast.success(variables.status === 'active' ? 'Pesquisa aberta com sucesso' : 'Pesquisa encerrada')
         },
+        onError: (e: Error) => toast.error(e.message || 'Erro ao atualizar pesquisa'),
     })
 }
 
@@ -109,6 +117,8 @@ export function useSubmitPulseResponse() {
             pulseService.submitResponse(payload),
         onSuccess: (_data, variables) => {
             void qc.invalidateQueries({ queryKey: pulseKeys.responses(variables.survey_id) })
+            toast.success('Resposta enviada com sucesso!')
         },
+        onError: (e: Error) => toast.error(e.message || 'Erro ao enviar resposta'),
     })
 }

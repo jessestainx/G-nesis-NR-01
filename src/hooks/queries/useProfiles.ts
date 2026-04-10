@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { profileService } from '@/services/profile.service'
 import { useAuth } from '@/hooks/useAuth'
 import type { Profile, UserRole } from '@/types'
@@ -37,7 +38,9 @@ export function useUpdateProfile() {
         onSuccess: (_data: unknown, variables: { id: string; payload: Partial<Omit<Profile, 'id' | 'created_at'>> }) => {
             qc.invalidateQueries({ queryKey: profileKeys.detail(variables.id) })
             if (variables.id === user?.id) refreshProfile()
+            toast.success('Perfil atualizado com sucesso')
         },
+        onError: (e) => toast.error(e instanceof Error ? e.message : 'Erro ao atualizar perfil'),
     })
 }
 
@@ -49,5 +52,9 @@ export function useInviteUser() {
             role: UserRole
             organizationId?: string
         }) => profileService.invite(params),
+        onSuccess: () => {
+            toast.success('Convite enviado com sucesso. O usuário deve verificar o e-mail.')
+        },
+        onError: (e) => toast.error(e instanceof Error ? e.message : 'Erro ao convidar usuário'),
     })
 }

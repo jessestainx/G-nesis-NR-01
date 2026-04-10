@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { actionPlanService } from '@/services/action-plan.service'
 import { useAuth } from '@/hooks/useAuth'
 import type { ActionPlan, ActionItem } from '@/types'
@@ -35,7 +36,9 @@ export function useCreateActionPlan() {
             actionPlanService.create(payload, user!.id),
         onSuccess: (_data: unknown, variables: Omit<ActionPlan, 'id' | 'created_at' | 'updated_at'>) => {
             qc.invalidateQueries({ queryKey: actionPlanKeys.byOrg(variables.organization_id) })
+            toast.success('Plano de ação criado com sucesso')
         },
+        onError: (e) => toast.error(e instanceof Error ? e.message : 'Erro ao criar plano de ação'),
     })
 }
 
@@ -50,7 +53,9 @@ export function useUpdateActionPlan() {
         }) => actionPlanService.update(vars.id, vars.payload, user!.id),
         onSuccess: (_data: unknown, variables: { id: string; organizationId: string; payload: Partial<Omit<ActionPlan, 'id' | 'created_at'>> }) => {
             qc.invalidateQueries({ queryKey: actionPlanKeys.byOrg(variables.organizationId) })
+            toast.success('Plano atualizado')
         },
+        onError: (e) => toast.error(e instanceof Error ? e.message : 'Erro ao atualizar plano'),
     })
 }
 
@@ -62,7 +67,9 @@ export function useCreateActionItem() {
             actionPlanService.createItem(payload, user!.id),
         onSuccess: (_data: unknown, variables: Omit<ActionItem, 'id' | 'created_at' | 'completed_at'>) => {
             qc.invalidateQueries({ queryKey: actionPlanKeys.items(variables.action_plan_id) })
+            toast.success('Item criado com sucesso')
         },
+        onError: (e) => toast.error(e instanceof Error ? e.message : 'Erro ao criar item'),
     })
 }
 
@@ -77,6 +84,8 @@ export function useUpdateActionItem() {
         }) => actionPlanService.updateItem(vars.id, vars.payload, user!.id),
         onSuccess: (_data: unknown, variables: { id: string; actionPlanId: string; payload: Partial<Omit<ActionItem, 'id' | 'created_at'>> }) => {
             qc.invalidateQueries({ queryKey: actionPlanKeys.items(variables.actionPlanId) })
+            toast.success('Item atualizado')
         },
+        onError: (e) => toast.error(e instanceof Error ? e.message : 'Erro ao atualizar item'),
     })
 }

@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { diagnosisService } from '@/services/diagnosis.service'
 import { useAuth } from '@/hooks/useAuth'
 import type { PsychosocialDiagnosis, PsychosocialRisk } from '@/types'
@@ -45,7 +46,9 @@ export function useCreateDiagnosis() {
             diagnosisService.create(payload, user!.id),
         onSuccess: (_data: unknown, variables: Omit<PsychosocialDiagnosis, 'id' | 'created_at' | 'updated_at'>) => {
             qc.invalidateQueries({ queryKey: diagnosisKeys.byOrg(variables.organization_id) })
+            toast.success('Diagnóstico criado com sucesso')
         },
+        onError: (e) => toast.error(e instanceof Error ? e.message : 'Erro ao criar diagnóstico'),
     })
 }
 
@@ -61,7 +64,9 @@ export function useUpdateDiagnosis() {
         onSuccess: (_data: unknown, variables: { id: string; organizationId: string; payload: Partial<Omit<PsychosocialDiagnosis, 'id' | 'created_at'>> }) => {
             qc.invalidateQueries({ queryKey: diagnosisKeys.byOrg(variables.organizationId) })
             qc.invalidateQueries({ queryKey: diagnosisKeys.detail(variables.id) })
+            toast.success('Diagnóstico atualizado')
         },
+        onError: (e) => toast.error(e instanceof Error ? e.message : 'Erro ao atualizar diagnóstico'),
     })
 }
 
@@ -73,6 +78,8 @@ export function useCreateRisk() {
             diagnosisService.createRisk(payload, user!.id),
         onSuccess: (_data: unknown, variables: Omit<PsychosocialRisk, 'id' | 'created_at' | 'updated_at'>) => {
             qc.invalidateQueries({ queryKey: diagnosisKeys.risks(variables.organization_id) })
+            toast.success('Risco registrado com sucesso')
         },
+        onError: (e) => toast.error(e instanceof Error ? e.message : 'Erro ao registrar risco'),
     })
 }

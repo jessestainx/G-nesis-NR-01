@@ -1,4 +1,5 @@
 import { QueryClientProvider } from '@tanstack/react-query'
+import { Toaster } from 'sonner'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 
@@ -145,6 +146,7 @@ export default function App() {
             </BrowserRouter>
 
             {env.isDev && <ReactQueryDevtools initialIsOpen={false} />}
+            <Toaster richColors position="top-right" duration={3000} />
         </QueryClientProvider>
     )
 }
