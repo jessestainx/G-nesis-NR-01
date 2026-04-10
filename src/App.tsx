@@ -26,6 +26,7 @@ import { PulsePage } from '@/pages/genesis/PulsePage'
 import { TrainingsPage } from '@/pages/genesis/TrainingsPage'
 import { MaturityPage } from '@/pages/genesis/MaturityPage'
 import { OrgSettingsPage } from '@/pages/genesis/OrgSettingsPage'
+import { SystemStatusPage } from '@/pages/genesis/SystemStatusPage'
 
 import { ClientOverview } from '@/pages/client/ClientOverview'
 import { ClientDiagnosisPage } from '@/pages/client/ClientDiagnosisPage'
@@ -89,6 +90,7 @@ export default function App() {
                             <Route path="trainings" element={<TrainingsPage />} />
                             <Route path="maturity" element={<MaturityPage />} />
                             <Route path="org-settings" element={<OrgSettingsPage />} />
+                            <Route path="system-status" element={<SystemStatusPage />} />
                             <Route path="profile" element={<ProfilePage />} />
                         </Route>
 
