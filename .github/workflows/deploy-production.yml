@@ -56,10 +56,18 @@ jobs:
       # Ativo quando SUPABASE_DB_PASSWORD e SUPABASE_ACCESS_TOKEN
       # estiverem configurados nos GitHub Secrets do repositório.
       - name: Aplicar migrations via psql
+        env:
+          PGPASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          PGSSLMODE: require
         run: |
-          DB_URL="postgresql://postgres:${{ secrets.SUPABASE_DB_PASSWORD }}@db.ntgdbglvibruhaqfzesx.supabase.co:5432/postgres?sslmode=require"
-          psql "$DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/005_org_settings_email_queue.sql || echo "Migration 005 falhou ou já aplicada"
-          psql "$DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/006_pg_cron_email_queue.sql || echo "Migration 006 falhou ou já aplicada"
+          psql -h db.ntgdbglvibruhaqfzesx.supabase.co -p 5432 -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/migrations/005_org_settings_email_queue.sql \
+            || echo "Migration 005: falhou ou ja aplicada"
+          psql -h db.ntgdbglvibruhaqfzesx.supabase.co -p 5432 -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/migrations/006_pg_cron_email_queue.sql \
+            || echo "Migration 006: falhou ou ja aplicada"
         continue-on-error: true
 
       - name: Setup Supabase CLI
