@@ -1,0 +1,26 @@
+{
+  "name": "Gênesis 360Care — Portal NR-01",
+  "short_name": "Gênesis",
+  "description": "Plataforma de gestão de saúde ocupacional e riscos psicossociais",
+  "start_url": "/app",
+  "display": "standalone",
+  "background_color": "#162136",
+  "theme_color": "#162136",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "health", "productivity"],
+  "prefer_related_applications": false
+}

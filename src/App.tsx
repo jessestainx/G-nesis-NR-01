@@ -24,6 +24,7 @@ import { ActionPlansPage } from '@/pages/genesis/ActionPlansPage'
 import { AuditPage } from '@/pages/genesis/AuditPage'
 import { PulsePage } from '@/pages/genesis/PulsePage'
 import { TrainingsPage } from '@/pages/genesis/TrainingsPage'
+import { MaturityPage } from '@/pages/genesis/MaturityPage'
 
 import { ClientOverview } from '@/pages/client/ClientOverview'
 import { ClientDiagnosisPage } from '@/pages/client/ClientDiagnosisPage'
@@ -85,6 +86,7 @@ export default function App() {
                             <Route path="audit" element={<AuditPage />} />
                             <Route path="pulse" element={<PulsePage />} />
                             <Route path="trainings" element={<TrainingsPage />} />
+                            <Route path="maturity" element={<MaturityPage />} />
                             <Route path="profile" element={<ProfilePage />} />
                         </Route>
 

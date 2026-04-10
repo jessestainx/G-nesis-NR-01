@@ -1,11 +1,15 @@
-import { Brain } from 'lucide-react'
+import { Brain, Printer } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { useDiagnoses } from '@/hooks/queries/useDiagnosis'
+import { useOrganization } from '@/hooks/queries/useOrganizations'
 import { SectionLoader } from '@/components/ui/LoadingSpinner'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { diagnosisStatusLabel, formatDate, formatPercent } from '@/utils/format'
-import type { PsychosocialDiagnosis } from '@/types'
+import { useState } from 'react'
+import type { PsychosocialDiagnosis, PsychosocialRisk } from '@/types'
+import { useRisks } from '@/hooks/queries/useDiagnosis'
+import { DiagnosisReport } from '@/components/DiagnosisReport'
 
 function StatusBadge({ status }: { status: string }) {
     const colors: Record<string, string> = {
@@ -21,7 +25,7 @@ function StatusBadge({ status }: { status: string }) {
     )
 }
 
-function DiagnosisRow({ d }: { d: PsychosocialDiagnosis }) {
+function DiagnosisRow({ d, onPrint }: { d: PsychosocialDiagnosis; onPrint: (d: PsychosocialDiagnosis) => void }) {
     const rate =
         d.total_invited > 0 ? Math.round((d.total_responded / d.total_invited) * 100) : 0
     return (
@@ -36,6 +40,11 @@ function DiagnosisRow({ d }: { d: PsychosocialDiagnosis }) {
             <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
                 {formatDate(d.started_at)}
             </td>
+            <td className="px-4 py-3">
+                <button onClick={() => onPrint(d)} title="Imprimir relatório" className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700">
+                    <Printer size={14} />
+                </button>
+            </td>
         </tr>
     )
 }
@@ -44,11 +53,23 @@ export function ClientDiagnosisPage() {
     const { profile } = useAuth()
     const orgId = profile?.organization_id ?? ''
     const { data: diagnoses, isLoading, error, refetch } = useDiagnoses(orgId)
+    const { data: risks } = useRisks(orgId)
+    const { data: org } = useOrganization(orgId)
+    const [printDiag, setPrintDiag] = useState<PsychosocialDiagnosis | null>(null)
 
     if (isLoading) return <SectionLoader />
     if (error) return <ErrorMessage message="Erro ao carregar diagnósticos" onRetry={refetch} />
 
     return (
+        <>
+        {printDiag && (
+            <DiagnosisReport
+                orgName={org?.name ?? 'Minha Organização'}
+                diagnosis={printDiag}
+                risks={(risks ?? []) as PsychosocialRisk[]}
+                onClose={() => setPrintDiag(null)}
+            />
+        )}
         <div className="space-y-6">
             <div>
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -77,16 +98,18 @@ export function ClientDiagnosisPage() {
                                 <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
                                     Início
                                 </th>
+                                <th className="px-4 py-3"></th>
                             </tr>
                         </thead>
                         <tbody>
                             {diagnoses.map((d) => (
-                                <DiagnosisRow key={d.id} d={d} />
+                                <DiagnosisRow key={d.id} d={d} onPrint={setPrintDiag} />
                             ))}
                         </tbody>
                     </table>
                 </div>
             )}
         </div>
+        </>
     )
 }

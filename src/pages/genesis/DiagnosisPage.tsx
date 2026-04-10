@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
-import { Plus, X, Search } from 'lucide-react'
+import { Plus, X, Search, Printer } from 'lucide-react'
 import type { PsychosocialDiagnosis, PsychosocialRisk } from '@/types'
+import { DiagnosisReport } from '@/components/DiagnosisReport'
 import { useOrganizations } from '@/hooks/queries/useOrganizations'
 import {
     useDiagnoses, useRisks,
@@ -95,7 +96,7 @@ function NewDiagModal({ orgId, orgName, onClose }: NewDiagModalProps) {
 
 // ─── Linha de diagnóstico com avançar status ──────────────────────────────────
 
-function DiagnosisRow({ d, orgId }: { d: PsychosocialDiagnosis; orgId: string }) {
+function DiagnosisRow({ d, orgId, onPrint }: { d: PsychosocialDiagnosis; orgId: string; onPrint: (d: PsychosocialDiagnosis) => void }) {
     const update = useUpdateDiagnosis()
     const next = STATUS_NEXT[d.status]
     const responseRate = d.total_invited > 0 ? Math.round((d.total_responded / d.total_invited) * 100) : 0
@@ -112,14 +113,22 @@ function DiagnosisRow({ d, orgId }: { d: PsychosocialDiagnosis; orgId: string })
             <td className="px-4 py-3 text-sm text-gray-500">{formatDate(d.started_at)}</td>
             <td className="px-4 py-3 text-sm text-gray-500">{formatDate(d.completed_at)}</td>
             <td className="px-4 py-3">
-                {next && (
+                <div className="flex items-center gap-1">
+                    {next && (
+                        <button
+                            onClick={() => void update.mutateAsync({ id: d.id, organizationId: orgId, payload: { status: next } })}
+                            disabled={update.isPending}
+                            className="rounded px-2 py-1 text-xs text-[#00A898] hover:bg-teal-50 disabled:opacity-40">
+                            → {diagnosisStatusLabel[next]}
+                        </button>
+                    )}
                     <button
-                        onClick={() => void update.mutateAsync({ id: d.id, organizationId: orgId, payload: { status: next } })}
-                        disabled={update.isPending}
-                        className="rounded px-2 py-1 text-xs text-[#00A898] hover:bg-teal-50 disabled:opacity-40">
-                        → {diagnosisStatusLabel[next]}
+                        onClick={() => onPrint(d)}
+                        title="Imprimir relatório"
+                        className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700">
+                        <Printer size={14} />
                     </button>
-                )}
+                </div>
             </td>
         </tr>
     )
@@ -145,6 +154,7 @@ function OrgDiagnosisBlock({ orgId, orgName }: { orgId: string; orgName: string 
     const risks = useRisks(orgId)
     const [creating, setCreating] = useState(false)
     const [statusFilter, setStatusFilter] = useState('all')
+    const [printDiag, setPrintDiag] = useState<PsychosocialDiagnosis | null>(null)
 
     if (diagnoses.isLoading || risks.isLoading) return <SectionLoader />
 
@@ -155,6 +165,14 @@ function OrgDiagnosisBlock({ orgId, orgName }: { orgId: string; orgName: string 
     return (
         <>
             {creating && <NewDiagModal orgId={orgId} orgName={orgName} onClose={() => setCreating(false)} />}
+            {printDiag && (
+                <DiagnosisReport
+                    orgName={orgName}
+                    diagnosis={printDiag}
+                    risks={risks.data ?? []}
+                    onClose={() => setPrintDiag(null)}
+                />
+            )}
             <div className="space-y-3">
                 <div className="flex flex-wrap items-center gap-2">
                     <h2 className="mr-auto text-sm font-semibold text-gray-700 dark:text-gray-300">{orgName}</h2>
@@ -188,7 +206,7 @@ function OrgDiagnosisBlock({ orgId, orgName }: { orgId: string; orgName: string 
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredDiagnoses.map((d) => <DiagnosisRow key={d.id} d={d} orgId={orgId} />)}
+                                {filteredDiagnoses.map((d) => <DiagnosisRow key={d.id} d={d} orgId={orgId} onPrint={setPrintDiag} />)}
                             </tbody>
                         </table>
                     </div>

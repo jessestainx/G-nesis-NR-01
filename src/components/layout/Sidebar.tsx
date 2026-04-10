@@ -3,7 +3,7 @@ import { NavLink } from "react-router-dom"
 import {
     LayoutDashboard, Building2, ClipboardCheck, FileText, Users,
     TrendingUp, BadgeCheck, X, AlertTriangle, BookOpen, Activity,
-    Lock, ShieldAlert, UserCircle2, History, LogOut, GraduationCap,
+    Lock, ShieldAlert, UserCircle2, History, LogOut, GraduationCap, BarChart3,
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "@/hooks/useAuth"
@@ -31,6 +31,7 @@ const genesisNav: NavSection[] = [
         { label: "Planos de Ação", to: "/dashboard/genesis/action-plans", icon: BadgeCheck },
         { label: "Pesquisas de Pulso", to: "/dashboard/genesis/pulse", icon: Activity },
         { label: "Treinamentos", to: "/dashboard/genesis/trainings", icon: GraduationCap },
+        { label: "Maturidade NR-01", to: "/dashboard/genesis/maturity", icon: BarChart3 },
     ]},
     { title: "COMERCIAL", items: [
         { label: "CRM", to: "/dashboard/genesis/crm", icon: Users },
