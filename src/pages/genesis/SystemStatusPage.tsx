@@ -72,7 +72,7 @@ export function SystemStatusPage() {
             updateService('Supabase Database', error
                 ? { status: 'error', message: error.message, latency }
                 : { status: 'ok', message: 'Conexão e query OK', latency })
-        } catch {
+        } catch (e) {
             updateService('Supabase Database', { status: 'error', message: String(e) })
         }
 
@@ -84,7 +84,7 @@ export function SystemStatusPage() {
             updateService('Supabase Auth', error
                 ? { status: 'error', message: error.message, latency }
                 : { status: 'ok', message: data.session ? `Sessão ativa (user: ${data.session.user.email})` : 'Auth OK (sem sessão ativa)', latency })
-        } catch {
+        } catch (e) {
             updateService('Supabase Auth', { status: 'error', message: String(e) })
         }
 
@@ -96,7 +96,7 @@ export function SystemStatusPage() {
             updateService('Supabase Storage', error
                 ? { status: 'error', message: error.message, latency }
                 : { status: 'ok', message: `${data?.length ?? 0} bucket(s): ${data?.map((b) => b.name).join(', ') || 'nenhum'}`, latency })
-        } catch {
+        } catch (e) {
             updateService('Supabase Storage', { status: 'error', message: String(e) })
         }
 
