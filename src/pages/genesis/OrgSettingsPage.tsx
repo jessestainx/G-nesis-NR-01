@@ -41,6 +41,7 @@ function OrgSettingsForm({ orgId, orgName }: { orgId: string; orgName: string })
     // Preencher form quando settings carregam
     useEffect(() => {
         if (!settings) return
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLogoUrl(settings.logo_url ?? '')
         setColor(settings.primary_color ?? '#00A898')
         setTagline(settings.company_tagline ?? '')

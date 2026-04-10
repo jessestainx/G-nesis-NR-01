@@ -72,7 +72,7 @@ export function SystemStatusPage() {
             updateService('Supabase Database', error
                 ? { status: 'error', message: error.message, latency }
                 : { status: 'ok', message: 'Conexão e query OK', latency })
-        } catch (e) {
+        } catch {
             updateService('Supabase Database', { status: 'error', message: String(e) })
         }
 
@@ -84,7 +84,7 @@ export function SystemStatusPage() {
             updateService('Supabase Auth', error
                 ? { status: 'error', message: error.message, latency }
                 : { status: 'ok', message: data.session ? `Sessão ativa (user: ${data.session.user.email})` : 'Auth OK (sem sessão ativa)', latency })
-        } catch (e) {
+        } catch {
             updateService('Supabase Auth', { status: 'error', message: String(e) })
         }
 
@@ -96,7 +96,7 @@ export function SystemStatusPage() {
             updateService('Supabase Storage', error
                 ? { status: 'error', message: error.message, latency }
                 : { status: 'ok', message: `${data?.length ?? 0} bucket(s): ${data?.map((b) => b.name).join(', ') || 'nenhum'}`, latency })
-        } catch (e) {
+        } catch {
             updateService('Supabase Storage', { status: 'error', message: String(e) })
         }
 
@@ -119,7 +119,7 @@ export function SystemStatusPage() {
                     ? { status: 'ok', message: `Online — ${txt.substring(0, 80)}`, latency }
                     : { status: 'error', message: `HTTP ${res.status}: ${txt.substring(0, 80)}`, latency })
             }
-        } catch (e) {
+        } catch {
             updateService('Edge Function (email)', { status: 'error', message: 'Não deployada ou não acessível. Execute: bash activate-email.sh' })
         }
 
@@ -131,7 +131,7 @@ export function SystemStatusPage() {
             updateService('Portal Web', res.ok
                 ? { status: 'ok', message: `HTTP ${res.status} — Online`, latency }
                 : { status: 'error', message: `HTTP ${res.status}`, latency })
-        } catch (e) {
+        } catch {
             updateService('Portal Web', { status: 'ok', message: 'Acessível (verificação no próprio servidor — CORS esperado)' })
         }
 
