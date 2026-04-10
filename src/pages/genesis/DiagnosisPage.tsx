@@ -101,8 +101,8 @@ function DiagnosisRow({ d, orgId }: { d: PsychosocialDiagnosis; orgId: string })
     const responseRate = d.total_invited > 0 ? Math.round((d.total_responded / d.total_invited) * 100) : 0
 
     return (
-        <tr className="border-b border-gray-100 hover:bg-gray-50">
-            <td className="px-4 py-3 text-sm font-medium text-gray-900">{d.title}</td>
+        <tr className="border-b border-gray-100 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800/50">
+            <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">{d.title}</td>
             <td className="px-4 py-3">
                 <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${diagnosisStatusColor[d.status]}`}>
                     {diagnosisStatusLabel[d.status] ?? d.status}
@@ -144,23 +144,38 @@ function OrgDiagnosisBlock({ orgId, orgName }: { orgId: string; orgName: string 
     const diagnoses = useDiagnoses(orgId)
     const risks = useRisks(orgId)
     const [creating, setCreating] = useState(false)
+    const [statusFilter, setStatusFilter] = useState('all')
 
     if (diagnoses.isLoading || risks.isLoading) return <SectionLoader />
+
+    const filteredDiagnoses = (diagnoses.data ?? []).filter(
+        (d) => statusFilter === 'all' || d.status === statusFilter
+    )
 
     return (
         <>
             {creating && <NewDiagModal orgId={orgId} orgName={orgName} onClose={() => setCreating(false)} />}
             <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                    <h2 className="text-sm font-semibold text-gray-700">{orgName}</h2>
+                <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="mr-auto text-sm font-semibold text-gray-700 dark:text-gray-300">{orgName}</h2>
+                    <select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        className="rounded-lg border border-gray-300 bg-white px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[#00A898] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                        <option value="all">Todos</option>
+                        <option value="draft">Rascunho</option>
+                        <option value="in_progress">Em andamento</option>
+                        <option value="completed">Concluído</option>
+                        <option value="archived">Arquivado</option>
+                    </select>
                     <button onClick={() => setCreating(true)}
                         className="flex items-center gap-1 rounded-lg bg-[#162136] px-3 py-1.5 text-xs text-white hover:bg-[#1E2F4A]">
                         <Plus size={12} /> Novo Diagnóstico
                     </button>
                 </div>
 
-                {(diagnoses.data?.length ?? 0) > 0 ? (
-                    <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+                {filteredDiagnoses.length > 0 ? (
+                    <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
                         <div className="border-b border-gray-200 px-4 py-2">
                             <p className="text-xs font-medium text-gray-500 uppercase">Diagnósticos</p>
                         </div>
@@ -173,7 +188,7 @@ function OrgDiagnosisBlock({ orgId, orgName }: { orgId: string; orgName: string 
                                 </tr>
                             </thead>
                             <tbody>
-                                {diagnoses.data!.map((d) => <DiagnosisRow key={d.id} d={d} orgId={orgId} />)}
+                                {filteredDiagnoses.map((d) => <DiagnosisRow key={d.id} d={d} orgId={orgId} />)}
                             </tbody>
                         </table>
                     </div>

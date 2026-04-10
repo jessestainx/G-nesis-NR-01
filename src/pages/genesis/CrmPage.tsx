@@ -61,38 +61,38 @@ function NewContactModal({ onClose }: NewContactModalProps) {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-            <div className="w-full max-w-md rounded-xl bg-white shadow-xl">
-                <div className="flex items-center justify-between border-b px-6 py-4">
-                    <h2 className="text-base font-semibold text-gray-900">Novo Contato</h2>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+            <div className="w-full max-w-md rounded-xl bg-white shadow-xl dark:bg-gray-900">
+                <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-700">
+                    <h2 className="text-base font-semibold text-gray-900 dark:text-white">Novo Contato</h2>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"><X size={18} /></button>
                 </div>
                 <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4 px-6 py-4">
                     <div>
                         <label className="mb-1 block text-xs font-medium text-gray-700">Nome *</label>
                         <input value={form.name} onChange={(e) => set('name', e.target.value)}
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00A898]" />
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00A898] dark:border-gray-600 dark:bg-gray-800 dark:text-white" />
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                         <div>
                             <label className="mb-1 block text-xs font-medium text-gray-700">E-mail</label>
                             <input type="email" value={form.email} onChange={(e) => set('email', e.target.value)}
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00A898]" />
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00A898] dark:border-gray-600 dark:bg-gray-800 dark:text-white" />
                         </div>
                         <div>
                             <label className="mb-1 block text-xs font-medium text-gray-700">Telefone</label>
                             <input value={form.phone} onChange={(e) => set('phone', e.target.value)}
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00A898]" />
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00A898] dark:border-gray-600 dark:bg-gray-800 dark:text-white" />
                         </div>
                     </div>
                     <div>
                         <label className="mb-1 block text-xs font-medium text-gray-700">Empresa</label>
                         <input value={form.company} onChange={(e) => set('company', e.target.value)}
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00A898]" />
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00A898] dark:border-gray-600 dark:bg-gray-800 dark:text-white" />
                     </div>
                     <div>
                         <label className="mb-1 block text-xs font-medium text-gray-700">Etapa</label>
                         <select value={form.stage} onChange={(e) => set('stage', e.target.value as CrmContact['stage'])}
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00A898]">
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00A898] dark:border-gray-600 dark:bg-gray-800 dark:text-white">
                             {STAGES.map((s) => <option key={s} value={s}>{crmStageLabel[s] ?? s}</option>)}
                         </select>
                     </div>
@@ -119,8 +119,8 @@ function ContactRow({ contact }: { contact: CrmContact }) {
     const nextStage = currentIdx < STAGES.length - 1 ? STAGES[currentIdx + 1] : null
 
     return (
-        <tr className="border-b border-gray-100 hover:bg-gray-50">
-            <td className="px-4 py-3 text-sm font-medium text-gray-900">{contact.name}</td>
+        <tr className="border-b border-gray-100 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800/50">
+            <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">{contact.name}</td>
             <td className="px-4 py-3 text-sm text-gray-600">{contact.company ?? '—'}</td>
             <td className="px-4 py-3 text-sm text-gray-600">{contact.email ?? '—'}</td>
             <td className="px-4 py-3">
@@ -128,7 +128,7 @@ function ContactRow({ contact }: { contact: CrmContact }) {
                     {crmStageLabel[contact.stage] ?? contact.stage}
                 </span>
             </td>
-            <td className="px-4 py-3 text-sm text-gray-500">{formatDate(contact.created_at)}</td>
+            <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{formatDate(contact.created_at)}</td>
             <td className="px-4 py-3">
                 {nextStage && (
                     <button
@@ -147,9 +147,9 @@ function ContactRow({ contact }: { contact: CrmContact }) {
 
 function ContractRow({ contract }: { contract: Contract }) {
     return (
-        <tr className="border-b border-gray-100 hover:bg-gray-50">
-            <td className="px-4 py-3 text-sm font-medium text-gray-900">{contract.title}</td>
-            <td className="px-4 py-3 text-sm font-semibold text-gray-900">{formatCurrency(contract.value)}</td>
+        <tr className="border-b border-gray-100 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800/50">
+            <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">{contract.title}</td>
+            <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">{formatCurrency(contract.value)}</td>
             <td className="px-4 py-3 text-sm text-gray-600">{formatDate(contract.start_date)}</td>
             <td className="px-4 py-3 text-sm text-gray-600">{formatDate(contract.end_date)}</td>
             <td className="px-4 py-3 text-sm text-gray-600">{contractStatusLabel[contract.status] ?? contract.status}</td>
@@ -164,11 +164,11 @@ function ContactsTable({ onNew }: { onNew: () => void }) {
     if (error) return <ErrorMessage message={error instanceof Error ? error.message : 'Erro'} onRetry={() => void refetch()} />
 
     return (
-        <div className="rounded-lg border border-gray-200 bg-white">
-            <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+        <div className="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
+            <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-4 py-3">
                 <div>
                     <h2 className="text-base font-semibold text-gray-800">Contatos</h2>
-                    <p className="text-xs text-gray-400">{contacts?.length ?? 0} contato(s)</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">{contacts?.length ?? 0} contato(s)</p>
                 </div>
                 <button onClick={onNew}
                     className="flex items-center gap-2 rounded-lg bg-[#162136] px-3 py-1.5 text-xs text-white hover:bg-[#1E2F4A]">
@@ -181,7 +181,7 @@ function ContactsTable({ onNew }: { onNew: () => void }) {
                 <>
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
-                        <thead className="bg-gray-50 text-xs uppercase text-gray-500">
+                        <thead className="bg-gray-50 text-xs uppercase text-gray-500 dark:bg-gray-800 dark:text-gray-400">
                             <tr>
                                 <th className="px-4 py-2">Nome</th><th className="px-4 py-2">Empresa</th>
                                 <th className="px-4 py-2">E-mail</th><th className="px-4 py-2">Etapa</th>
@@ -204,19 +204,19 @@ function ContractsTable() {
     if (error) return <ErrorMessage message={error instanceof Error ? error.message : 'Erro'} onRetry={() => void refetch()} />
 
     return (
-        <div className="rounded-lg border border-gray-200 bg-white">
-            <div className="border-b border-gray-200 px-4 py-3">
+        <div className="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
+            <div className="border-b border-gray-200 dark:border-gray-700 px-4 py-3">
                 <h2 className="text-base font-semibold text-gray-800">Contratos Ativos</h2>
-                <p className="text-xs text-gray-400">{contracts?.length ?? 0} contrato(s)</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">{contracts?.length ?? 0} contrato(s)</p>
             </div>
             {!contracts || contracts.length === 0 ? (
                 <div className="p-4"><EmptyState icon={FileText} title="Nenhum contrato ativo" description="Contratos ativos aparecerão aqui." /></div>
             ) : (
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
-                        <thead className="bg-gray-50 text-xs uppercase text-gray-500">
+                        <thead className="bg-gray-50 text-xs uppercase text-gray-500 dark:bg-gray-800 dark:text-gray-400">
                             <tr>
-                                <th className="px-4 py-2">Título</th><th className="px-4 py-2">Valor</th>
+                                <th className="px-4 py-2 text-gray-500 dark:text-gray-400">Título</th><th className="px-4 py-2">Valor</th>
                                 <th className="px-4 py-2">Início</th><th className="px-4 py-2">Vencimento</th>
                                 <th className="px-4 py-2">Status</th>
                             </tr>
@@ -236,8 +236,8 @@ export function CrmPage() {
             {showNew && <NewContactModal onClose={() => setShowNew(false)} />}
             <div className="space-y-6 p-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">CRM</h1>
-                    <p className="mt-1 text-sm text-gray-500">Contatos e contratos</p>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">CRM</h1>
+                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Contatos e contratos</p>
                 </div>
                 <ContactsTable onNew={() => setShowNew(true)} />
                 <ContractsTable />

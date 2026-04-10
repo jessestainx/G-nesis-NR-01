@@ -31,16 +31,16 @@ function DocRow({ doc, orgId }: { doc: OrgDocument; orgId: string }) {
     }
 
     return (
-        <tr className="border-b border-gray-100 hover:bg-gray-50">
+        <tr className="border-b border-gray-100 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800/50">
             <td className="px-4 py-3">
                 <div className="flex items-center gap-2">
                     <FileText className="h-4 w-4 shrink-0 text-gray-400" />
-                    <span className="text-sm font-medium text-gray-900">{doc.name}</span>
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">{doc.name}</span>
                 </div>
             </td>
-            <td className="px-4 py-3 text-sm text-gray-500">{doc.type}</td>
-            <td className="px-4 py-3 text-sm text-gray-500">{formatFileSize(doc.size_bytes)}</td>
-            <td className="px-4 py-3 text-sm text-gray-500">{formatDate(doc.created_at)}</td>
+            <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{doc.type}</td>
+            <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{formatFileSize(doc.size_bytes)}</td>
+            <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{formatDate(doc.created_at)}</td>
             <td className="px-4 py-3">
                 <div className="flex items-center gap-1">
                     <button
@@ -83,9 +83,9 @@ function UploadArea({ orgId }: { orgId: string }) {
     }
 
     return (
-        <div className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3">
+        <div className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900 px-4 py-3">
             <select value={docType} onChange={(e) => setDocType(e.target.value)}
-                className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00A898]">
+                className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00A898] dark:border-gray-600 dark:bg-gray-800 dark:text-white">
                 {DOC_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
             </select>
             <input ref={fileRef} type="file" className="hidden" id="doc-upload" onChange={(e) => void handleFile(e)} />
@@ -107,8 +107,8 @@ export function ClientDocumentsPage() {
 
     if (!orgId) return (
         <div className="p-6">
-            <h1 className="text-2xl font-bold text-gray-900">Documentos</h1>
-            <p className="mt-2 text-sm text-gray-500">Conta sem organização associada.</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Documentos</h1>
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Conta sem organização associada.</p>
         </div>
     )
 
@@ -118,8 +118,8 @@ export function ClientDocumentsPage() {
     return (
         <div className="space-y-6 p-6">
             <div>
-                <h1 className="text-2xl font-bold text-gray-900">Documentos</h1>
-                <p className="mt-1 text-sm text-gray-500">Documentos e arquivos da sua organização.</p>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Documentos</h1>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Documentos e arquivos da sua organização.</p>
             </div>
 
             <UploadArea orgId={orgId} />
@@ -127,12 +127,12 @@ export function ClientDocumentsPage() {
             {!docs || docs.length === 0 ? (
                 <div className="rounded-lg border border-dashed border-gray-300 p-12 text-center">
                     <FileText className="mx-auto mb-3 h-8 w-8 text-gray-300" />
-                    <p className="text-sm text-gray-500">Nenhum documento disponível.</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Nenhum documento disponível.</p>
                 </div>
             ) : (
-                <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
+                <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900 shadow-sm">
                     <table className="w-full text-left">
-                        <thead className="bg-gray-50 text-xs uppercase text-gray-500">
+                        <thead className="bg-gray-50 text-xs uppercase text-gray-500 dark:bg-gray-800 dark:text-gray-400">
                             <tr>
                                 <th className="px-4 py-3">Documento</th>
                                 <th className="px-4 py-3">Tipo</th>

@@ -74,28 +74,28 @@ function NewTxModal({ onClose }: NewTxModalProps) {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-            <div className="w-full max-w-md rounded-xl bg-white shadow-xl">
-                <div className="flex items-center justify-between border-b px-6 py-4">
-                    <h2 className="text-base font-semibold text-gray-900">Nova Transação</h2>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+            <div className="w-full max-w-md rounded-xl bg-white shadow-xl dark:bg-gray-900">
+                <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-700">
+                    <h2 className="text-base font-semibold text-gray-900 dark:text-white">Nova Transação</h2>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"><X size={18} /></button>
                 </div>
                 <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4 px-6 py-4">
                     <div>
                         <label className="mb-1 block text-xs font-medium text-gray-700">Descrição *</label>
                         <input value={form.description} onChange={(e) => set('description', e.target.value)}
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00A898]" />
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00A898] dark:border-gray-600 dark:bg-gray-800 dark:text-white" />
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                         <div>
                             <label className="mb-1 block text-xs font-medium text-gray-700">Valor (R$) *</label>
                             <input type="number" min="0.01" step="0.01" value={form.amount}
                                 onChange={(e) => set('amount', e.target.value)}
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00A898]" />
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00A898] dark:border-gray-600 dark:bg-gray-800 dark:text-white" />
                         </div>
                         <div>
                             <label className="mb-1 block text-xs font-medium text-gray-700">Tipo</label>
                             <select value={form.type} onChange={(e) => set('type', e.target.value as FinancialTransaction['type'])}
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00A898]">
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00A898] dark:border-gray-600 dark:bg-gray-800 dark:text-white">
                                 <option value="revenue">Receita</option>
                                 <option value="expense">Despesa</option>
                                 <option value="commission">Comissão</option>
@@ -106,12 +106,12 @@ function NewTxModal({ onClose }: NewTxModalProps) {
                         <div>
                             <label className="mb-1 block text-xs font-medium text-gray-700">Categoria</label>
                             <input value={form.category} onChange={(e) => set('category', e.target.value)}
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00A898]" />
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00A898] dark:border-gray-600 dark:bg-gray-800 dark:text-white" />
                         </div>
                         <div>
                             <label className="mb-1 block text-xs font-medium text-gray-700">Data de referência</label>
                             <input type="date" value={form.reference_date} onChange={(e) => set('reference_date', e.target.value)}
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00A898]" />
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00A898] dark:border-gray-600 dark:bg-gray-800 dark:text-white" />
                         </div>
                     </div>
                     {(fieldError ?? mutError) && <p className="text-xs text-red-600">{fieldError ?? mutError}</p>}
@@ -146,8 +146,8 @@ function SummaryCards({ from, to }: { from: string; to: string }) {
     return (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             {cards.map(({ label, value, color }) => (
-                <div key={label} className="rounded-lg border border-gray-200 bg-white p-4">
-                    <p className="text-xs text-gray-500">{label}</p>
+                <div key={label} className="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900 p-4">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{label}</p>
                     <p className={`mt-1 text-lg font-bold ${color}`}>{formatCurrency(value)}</p>
                 </div>
             ))}
@@ -159,9 +159,9 @@ function SummaryCards({ from, to }: { from: string; to: string }) {
 
 function TransactionRow({ tx }: { tx: FinancialTransaction }) {
     return (
-        <tr className="border-b border-gray-100 hover:bg-gray-50">
+        <tr className="border-b border-gray-100 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800/50">
             <td className="px-4 py-3 text-sm text-gray-600">{formatDate(tx.reference_date)}</td>
-            <td className="px-4 py-3 text-sm font-medium text-gray-900">{tx.description}</td>
+            <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">{tx.description}</td>
             <td className="px-4 py-3 text-sm text-gray-600">{tx.category ?? '—'}</td>
             <td className="px-4 py-3">
                 <span className={`text-xs font-medium ${typeColor[tx.type]}`}>{typeLabel[tx.type]}</span>
@@ -177,11 +177,11 @@ function TransactionsTable({ from, to, onNew }: { from: string; to: string; onNe
     if (error) return <ErrorMessage message={error instanceof Error ? error.message : 'Erro'} onRetry={() => void refetch()} />
 
     return (
-        <div className="rounded-lg border border-gray-200 bg-white">
-            <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+        <div className="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
+            <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-4 py-3">
                 <div>
                     <h2 className="text-base font-semibold text-gray-800">Transações</h2>
-                    <p className="text-xs text-gray-400">{txs?.length ?? 0} transação(ões) no período</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">{txs?.length ?? 0} transação(ões) no período</p>
                 </div>
                 <button onClick={onNew}
                     className="flex items-center gap-2 rounded-lg bg-[#162136] px-3 py-1.5 text-xs text-white hover:bg-[#1E2F4A]">
@@ -199,7 +199,7 @@ function TransactionsTable({ from, to, onNew }: { from: string; to: string; onNe
             ) : (
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
-                        <thead className="bg-gray-50 text-xs uppercase text-gray-500">
+                        <thead className="bg-gray-50 text-xs uppercase text-gray-500 dark:bg-gray-800 dark:text-gray-400">
                             <tr>
                                 <th className="px-4 py-2">Data</th><th className="px-4 py-2">Descrição</th>
                                 <th className="px-4 py-2">Categoria</th><th className="px-4 py-2">Tipo</th>
@@ -229,17 +229,17 @@ export function FinancePage() {
             <div className="space-y-6 p-6">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Financeiro</h1>
-                        <p className="mt-1 text-sm text-gray-500">Receitas, despesas e comissões</p>
+                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Financeiro</h1>
+                        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Receitas, despesas e comissões</p>
                     </div>
                     <div className="flex items-center gap-2">
                         <select value={month} onChange={(e) => setMonth(Number(e.target.value))}
-                            className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00A898]">
+                            className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00A898] dark:border-gray-600 dark:bg-gray-800 dark:text-white">
                             {MONTH_NAMES.map((m, i) => <option key={i} value={i}>{m}</option>)}
                         </select>
                         <input type="number" value={year} min={2020} max={2099}
                             onChange={(e) => setYear(Number(e.target.value))}
-                            className="w-24 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00A898]" />
+                            className="w-24 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00A898] dark:border-gray-600 dark:bg-gray-800 dark:text-white" />
                     </div>
                 </div>
                 <SummaryCards from={from} to={to} />
