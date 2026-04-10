@@ -30,23 +30,27 @@ jobs:
           VITE_APP_NAME: 'Gênesis NR-01'
           VITE_APP_URL: 'https://portal.genesis360care.com.br'
 
+      - name: Configurar chave SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PROD_SERVER_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.PROD_SERVER_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+
       - name: Deploy via rsync para o servidor
-        uses: burnett01/rsync-deployments@7.0.1
-        with:
-          switches: -avzr --delete
-          path: dist/
-          remote_path: /var/www/portal.genesis360care.com.br/
-          remote_host: ${{ secrets.PROD_SERVER_HOST }}
-          remote_user: ${{ secrets.PROD_SERVER_USER }}
-          remote_key: ${{ secrets.PROD_SERVER_SSH_KEY }}
+        run: |
+          rsync -avzr --delete \
+            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
+            dist/ \
+            ${{ secrets.PROD_SERVER_USER }}@${{ secrets.PROD_SERVER_HOST }}:/var/www/portal.genesis360care.com.br/
 
       - name: Recarregar Nginx
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.PROD_SERVER_HOST }}
-          username: ${{ secrets.PROD_SERVER_USER }}
-          key: ${{ secrets.PROD_SERVER_SSH_KEY }}
-          script: sudo systemctl reload nginx
+        run: |
+          ssh -i ~/.ssh/deploy_key \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            ${{ secrets.PROD_SERVER_USER }}@${{ secrets.PROD_SERVER_HOST }} \
+            "sudo systemctl reload nginx" 
 
       # ─── Supabase Migrations + Edge Functions ───────────────────
       # Ativo quando SUPABASE_ACCESS_TOKEN estiver configurado nos
