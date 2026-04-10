@@ -52,14 +52,12 @@ jobs:
       # Ativo quando SUPABASE_ACCESS_TOKEN estiver configurado nos
       # GitHub Secrets do repositório.
       - name: Aplicar Supabase migrations
-        if: ${{ secrets.SUPABASE_ACCESS_TOKEN != '' }}
         uses: supabase/setup-cli@v1
         with:
           version: latest
         continue-on-error: true
 
       - name: Push migrations ao banco
-        if: ${{ secrets.SUPABASE_ACCESS_TOKEN != '' }}
         run: |
           supabase db push \
             --project-ref ntgdbglvibruhaqfzesx \
@@ -69,7 +67,6 @@ jobs:
         continue-on-error: true
 
       - name: Deploy Edge Function send-email
-        if: ${{ secrets.SUPABASE_ACCESS_TOKEN != '' }}
         run: |
           supabase functions deploy send-email \
             --project-ref ntgdbglvibruhaqfzesx \
@@ -79,7 +76,6 @@ jobs:
         continue-on-error: true
 
       - name: Configurar secrets da Edge Function
-        if: ${{ secrets.SUPABASE_ACCESS_TOKEN != '' && secrets.RESEND_API_KEY != '' }}
         run: |
           supabase secrets set RESEND_API_KEY="${{ secrets.RESEND_API_KEY }}" \
             --project-ref ntgdbglvibruhaqfzesx
