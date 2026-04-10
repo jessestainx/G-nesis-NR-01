@@ -3,7 +3,7 @@ import { NavLink } from "react-router-dom"
 import {
     LayoutDashboard, Building2, ClipboardCheck, FileText, Users,
     TrendingUp, BadgeCheck, X, AlertTriangle, BookOpen, Activity,
-    Lock, ShieldAlert, UserCircle2, History, LogOut, GraduationCap, BarChart3,
+    Lock, ShieldAlert, UserCircle2, History, LogOut, GraduationCap, BarChart3, Settings2,
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "@/hooks/useAuth"
@@ -39,6 +39,7 @@ const genesisNav: NavSection[] = [
     ]},
     { title: "SISTEMA", items: [
         { label: "Auditoria", to: "/dashboard/genesis/audit", icon: History },
+        { label: "Config. por Org", to: "/dashboard/genesis/org-settings", icon: Settings2 },
     ]},
 ]
 

@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Menu, LogOut, UserCircle, ChevronDown } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
+import { useOrgBranding } from '@/hooks/useOrgBranding'
 import { NotificationsDropdown } from '@/components/layout/NotificationsDropdown'
 
 interface HeaderProps {
@@ -101,8 +102,10 @@ function ProfileDropdown() {
 }
 
 export function Header({ onMenuClick, title }: HeaderProps) {
+    const { logoUrl, tagline, hasCustom } = useOrgBranding()
+
     return (
-        <header className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b border-gray-200 bg-white px-4 shadow-sm">
+        <header className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b border-gray-200 bg-white px-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
             <button
                 onClick={onMenuClick}
                 className="lg:hidden rounded-md p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
@@ -110,9 +113,23 @@ export function Header({ onMenuClick, title }: HeaderProps) {
             >
                 <Menu className="h-5 w-5" />
             </button>
-            {title && (
+
+            {/* Branding multi-tenant: logo da org ou título */}
+            {hasCustom && logoUrl ? (
+                <img
+                    src={logoUrl}
+                    alt="Logo"
+                    className="hidden h-7 max-w-32 object-contain lg:block"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                />
+            ) : title ? (
                 <p className="text-sm text-gray-500 hidden lg:block">{title}</p>
+            ) : null}
+
+            {tagline && (
+                <p className="hidden max-w-xs truncate text-xs text-gray-400 lg:block">{tagline}</p>
             )}
+
             <div className="ml-auto flex items-center gap-2">
                 <NotificationsDropdown />
                 <ProfileDropdown />
