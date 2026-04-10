@@ -57,9 +57,9 @@ jobs:
       # estiverem configurados nos GitHub Secrets do repositório.
       - name: Aplicar migrations via psql
         run: |
-          DB_URL="postgresql://postgres:${{ secrets.SUPABASE_DB_PASSWORD }}@db.ntgdbglvibruhaqfzesx.supabase.co:5432/postgres"
-          psql "$DB_URL" -f supabase/migrations/005_org_settings_email_queue.sql
-          psql "$DB_URL" -f supabase/migrations/006_pg_cron_email_queue.sql
+          DB_URL="postgresql://postgres:${{ secrets.SUPABASE_DB_PASSWORD }}@db.ntgdbglvibruhaqfzesx.supabase.co:5432/postgres?sslmode=require"
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/005_org_settings_email_queue.sql || echo "Migration 005 falhou ou já aplicada"
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/006_pg_cron_email_queue.sql || echo "Migration 006 falhou ou já aplicada"
         continue-on-error: true
 
       - name: Setup Supabase CLI
