@@ -78,6 +78,10 @@ jobs:
 
       - name: Deploy Edge Function send-email
         run: |
+          mkdir -p /tmp/fn-deploy/supabase/functions/send-email
+          cp supabase/functions/send-email/index.ts \
+             /tmp/fn-deploy/supabase/functions/send-email/
+          cd /tmp/fn-deploy
           supabase functions deploy send-email \
             --project-ref ntgdbglvibruhaqfzesx \
             --no-verify-jwt
