@@ -13,6 +13,7 @@ import { usePagination } from '@/hooks/usePagination'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { formatDate, formatCnpj } from '@/utils/format'
+import { cleanCnpj, validateCnpj, fetchCnpjData } from '@/utils/cnpj'
 
 // ─── Labels ───────────────────────────────────────────────────────────────────
 
@@ -104,6 +105,9 @@ interface OrgModalProps {
 function OrgModal({ initial, onClose }: OrgModalProps) {
     const [form, setForm] = useState<FormValues>(initial ? orgToForm(initial) : emptyForm)
     const [errors, setErrors] = useState<OrgErrors>({})
+    const [cnpjLoading, setCnpjLoading] = useState(false)
+    const [cnpjError, setCnpjError] = useState<string | null>(null)
+    const [cnpjFound, setCnpjFound] = useState(false)
 
     const createMut = useCreateOrganization()
     const updateMut = useUpdateOrganization()
@@ -113,6 +117,46 @@ function OrgModal({ initial, onClose }: OrgModalProps) {
     function set(field: keyof FormValues, value: string) {
         setForm((f) => ({ ...f, [field]: value }))
         if (errors[field]) setErrors((e) => ({ ...e, [field]: undefined }))
+    }
+
+    async function handleCnpjChange(value: string) {
+        // Formatar enquanto digita
+        const digits = cleanCnpj(value)
+        let formatted = digits
+        if (digits.length > 2) formatted = digits.slice(0, 2) + '.' + digits.slice(2)
+        if (digits.length > 5) formatted = formatted.slice(0, 6) + '.' + digits.slice(5)
+        if (digits.length > 8) formatted = formatted.slice(0, 10) + '/' + digits.slice(8)
+        if (digits.length > 12) formatted = formatted.slice(0, 15) + '-' + digits.slice(12, 14)
+
+        setForm((f) => ({ ...f, cnpj: formatted }))
+        if (errors.cnpj) setErrors((e) => ({ ...e, cnpj: undefined }))
+        setCnpjError(null)
+        setCnpjFound(false)
+
+        if (digits.length !== 14) return
+        if (!validateCnpj(digits)) {
+            setCnpjError('CNPJ inválido')
+            return
+        }
+
+        setCnpjLoading(true)
+        const data = await fetchCnpjData(digits)
+        setCnpjLoading(false)
+
+        if (data.error) {
+            setCnpjError(data.error)
+            return
+        }
+
+        // Preencher campos automaticamente (não sobrescrever se já preenchido)
+        setForm((f) => ({
+            ...f,
+            name: f.name || data.razaoSocial || data.nomeFantasia || f.name,
+            industry: f.industry || data.setor || f.industry,
+            responsible_name: f.responsible_name || data.socioAdministrador || f.responsible_name,
+            responsible_email: f.responsible_email || data.email || f.responsible_email,
+        }))
+        setCnpjFound(true)
     }
 
     async function handleSubmit(e: React.FormEvent) {
@@ -188,14 +232,36 @@ function OrgModal({ initial, onClose }: OrgModalProps) {
 
                         <div>
                             <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">CNPJ</label>
-                            <input
-                                className={`w-full rounded-lg border px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none dark:bg-gray-800 dark:text-white ${errors.cnpj ? 'border-red-400 dark:border-red-500' : 'border-gray-300 dark:border-gray-700'}`}
-                                value={form.cnpj}
-                                onChange={(e) => set('cnpj', e.target.value)}
-                                placeholder="00.000.000/0001-00"
-                                maxLength={18}
-                            />
+                            <div className="relative">
+                                <input
+                                    className={`w-full rounded-lg border px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none dark:bg-gray-800 dark:text-white pr-8 ${errors.cnpj ? 'border-red-400 dark:border-red-500' : 'border-gray-300 dark:border-gray-700'}`}
+                                    value={form.cnpj}
+                                    onChange={(e) => void handleCnpjChange(e.target.value)}
+                                    placeholder="00.000.000/0001-00"
+                                    maxLength={18}
+                                />
+                                {cnpjLoading && (
+                                    <div className="absolute right-2 top-2.5">
+                                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
+                                    </div>
+                                )}
+                                {cnpjFound && !cnpjLoading && (
+                                    <div className="absolute right-2 top-2.5 text-green-500">
+                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                            <path d="M13.5 3.5L6 11 2.5 7.5l-1 1L6 13l8.5-8.5z" />
+                                        </svg>
+                                    </div>
+                                )}
+                            </div>
                             {errors.cnpj && <p className="mt-0.5 text-xs text-red-500">{errors.cnpj}</p>}
+                            {cnpjError && !errors.cnpj && (
+                                <p className="mt-1 text-xs text-red-500">{cnpjError}</p>
+                            )}
+                            {cnpjFound && (
+                                <p className="mt-1 text-xs text-green-600 dark:text-green-400">
+                                    Dados preenchidos automaticamente pela Receita Federal
+                                </p>
+                            )}
                         </div>
 
                         <div>
