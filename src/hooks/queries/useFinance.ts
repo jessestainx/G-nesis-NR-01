@@ -165,3 +165,30 @@ export function useDeleteTransaction() {
         onError: (e: Error) => toast.error(e.message || 'Erro ao excluir transação'),
     })
 }
+
+export function useUpdateContractStatus() {
+    const qc = useQueryClient()
+    const { user } = useAuth()
+    return useMutation({
+        mutationFn: ({ id, status }: { id: string; status: Contract['status'] }) =>
+            crmService.updateContractStatus(id, status, user!.id),
+        onSuccess: () => {
+            void qc.invalidateQueries({ queryKey: crmKeys.contracts.all })
+            toast.success('Status do contrato atualizado')
+        },
+        onError: (e: Error) => toast.error(e.message || 'Erro ao atualizar contrato'),
+    })
+}
+
+export function useDeleteContract() {
+    const qc = useQueryClient()
+    const { user } = useAuth()
+    return useMutation({
+        mutationFn: (id: string) => crmService.deleteContract(id, user!.id),
+        onSuccess: () => {
+            void qc.invalidateQueries({ queryKey: crmKeys.contracts.all })
+            toast.success('Contrato excluído')
+        },
+        onError: (e: Error) => toast.error(e.message || 'Erro ao excluir contrato'),
+    })
+}

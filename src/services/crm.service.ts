@@ -126,4 +126,20 @@ export const crmService = {
         }
         return result
     },
+
+    async deleteContract(
+        id: string,
+        actorId: string,
+    ): Promise<{ error: string | null }> {
+        const result = await contractRepository.delete(id)
+        if (!result.error) {
+            await auditRepository.log({
+                userId: actorId,
+                action: 'contract.delete',
+                entityType: 'contracts',
+                entityId: id,
+            })
+        }
+        return result
+    },
 }
