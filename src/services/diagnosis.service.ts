@@ -81,5 +81,41 @@ export const diagnosisService = {
         }
         return result
     },
+
+    async deleteDiagnosis(
+        id: string,
+        organizationId: string,
+        actorId: string,
+    ): Promise<{ error: string | null }> {
+        const result = await diagnosisRepository.delete(id)
+        if (!result.error) {
+            await auditRepository.log({
+                userId: actorId,
+                action: 'diagnosis.delete',
+                entityType: 'psychosocial_diagnosis',
+                entityId: id,
+                organizationId,
+            })
+        }
+        return result
+    },
+
+    async deleteRisk(
+        id: string,
+        organizationId: string,
+        actorId: string,
+    ): Promise<{ error: string | null }> {
+        const result = await riskRepository.delete(id)
+        if (!result.error) {
+            await auditRepository.log({
+                userId: actorId,
+                action: 'diagnosis.risk.delete',
+                entityType: 'psychosocial_risks',
+                entityId: id,
+                organizationId,
+            })
+        }
+        return result
+    },
 }
 

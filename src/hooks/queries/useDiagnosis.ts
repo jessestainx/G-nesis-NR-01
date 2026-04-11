@@ -83,3 +83,31 @@ export function useCreateRisk() {
         onError: (e) => toast.error(e instanceof Error ? e.message : 'Erro ao registrar risco'),
     })
 }
+
+export function useDeleteDiagnosis() {
+    const qc = useQueryClient()
+    const { user } = useAuth()
+    return useMutation({
+        mutationFn: (vars: { id: string; orgId: string }) =>
+            diagnosisService.deleteDiagnosis(vars.id, vars.orgId, user!.id),
+        onSuccess: (_: unknown, variables: { id: string; orgId: string }) => {
+            void qc.invalidateQueries({ queryKey: diagnosisKeys.byOrg(variables.orgId) })
+            toast.success('Diagnóstico excluído')
+        },
+        onError: (e: Error) => toast.error(e.message || 'Erro ao excluir diagnóstico'),
+    })
+}
+
+export function useDeleteRisk() {
+    const qc = useQueryClient()
+    const { user } = useAuth()
+    return useMutation({
+        mutationFn: (vars: { id: string; orgId: string }) =>
+            diagnosisService.deleteRisk(vars.id, vars.orgId, user!.id),
+        onSuccess: (_: unknown, variables: { id: string; orgId: string }) => {
+            void qc.invalidateQueries({ queryKey: diagnosisKeys.risks(variables.orgId) })
+            toast.success('Risco excluído')
+        },
+        onError: (e: Error) => toast.error(e.message || 'Erro ao excluir risco'),
+    })
+}

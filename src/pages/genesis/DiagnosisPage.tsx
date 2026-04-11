@@ -1,11 +1,12 @@
 import { useState, useMemo } from 'react'
-import { Plus, X, Search, Printer } from 'lucide-react'
+import { Plus, X, Search, Printer, Trash2 } from 'lucide-react'
 import type { PsychosocialDiagnosis, PsychosocialRisk } from '@/types'
 import { DiagnosisReport } from '@/components/DiagnosisReport'
 import { useOrganizations } from '@/hooks/queries/useOrganizations'
 import {
     useDiagnoses, useRisks,
     useCreateDiagnosis, useUpdateDiagnosis,
+    useDeleteDiagnosis, useDeleteRisk,
 } from '@/hooks/queries/useDiagnosis'
 import { SectionLoader } from '@/components/ui/LoadingSpinner'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
@@ -128,13 +129,45 @@ function DiagnosisRow({ d, orgId, onPrint }: { d: PsychosocialDiagnosis; orgId: 
                         className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700">
                         <Printer size={14} />
                     </button>
+                    {d.status === 'draft' && (
+                        <DeleteDiagnosisButton id={d.id} orgId={orgId} />
+                    )}
                 </div>
             </td>
         </tr>
     )
 }
 
-function RiskRow({ risk }: { risk: PsychosocialRisk }) {
+function DeleteDiagnosisButton({ id, orgId }: { id: string; orgId: string }) {
+    const del = useDeleteDiagnosis()
+    const [confirm, setConfirm] = useState(false)
+    if (!confirm) {
+        return (
+            <button
+                onClick={() => setConfirm(true)}
+                title="Excluir diagnóstico"
+                className="rounded p-1 text-gray-300 hover:bg-red-50 hover:text-red-500">
+                <Trash2 size={13} />
+            </button>
+        )
+    }
+    return (
+        <span className="flex items-center gap-1">
+            <span className="text-xs text-red-600">Confirmar?</span>
+            <button
+                onClick={() => void del.mutateAsync({ id, orgId })}
+                disabled={del.isPending}
+                className="rounded px-1.5 py-0.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-40">
+                Sim
+            </button>
+            <button onClick={() => setConfirm(false)} className="text-xs text-gray-400 hover:text-gray-600">Não</button>
+        </span>
+    )
+}
+
+function RiskRow({ risk, orgId }: { risk: PsychosocialRisk; orgId: string }) {
+    const del = useDeleteRisk()
+    const [confirm, setConfirm] = useState(false)
     return (
         <tr className="border-b border-gray-100 hover:bg-gray-50">
             <td className="px-4 py-3 text-sm font-medium text-gray-900">{risk.category}</td>
@@ -145,6 +178,22 @@ function RiskRow({ risk }: { risk: PsychosocialRisk }) {
                 </span>
             </td>
             <td className="px-4 py-3 text-sm text-gray-500">{formatDate(risk.identified_at)}</td>
+            <td className="px-4 py-3">
+                {!confirm ? (
+                    <button onClick={() => setConfirm(true)} title="Excluir risco"
+                        className="rounded p-1 text-gray-300 hover:bg-red-50 hover:text-red-500">
+                        <Trash2 size={13} />
+                    </button>
+                ) : (
+                    <span className="flex items-center gap-1">
+                        <span className="text-xs text-red-600">Confirmar?</span>
+                        <button onClick={() => void del.mutateAsync({ id: risk.id, orgId })}
+                            disabled={del.isPending}
+                            className="rounded px-1.5 py-0.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-40">Sim</button>
+                        <button onClick={() => setConfirm(false)} className="text-xs text-gray-400 hover:text-gray-600">Não</button>
+                    </span>
+                )}
+            </td>
         </tr>
     )
 }
@@ -224,9 +273,10 @@ function OrgDiagnosisBlock({ orgId, orgName }: { orgId: string; orgName: string 
                                 <tr>
                                     <th className="px-4 py-2">Categoria</th><th className="px-4 py-2">Descrição</th>
                                     <th className="px-4 py-2">Nível</th><th className="px-4 py-2">Identificado em</th>
+                                    <th className="px-4 py-2 w-8"></th>
                                 </tr>
                             </thead>
-                            <tbody>{risks.data!.map((r) => <RiskRow key={r.id} risk={r} />)}</tbody>
+                            <tbody>{risks.data!.map((r) => <RiskRow key={r.id} risk={r} orgId={orgId} />)}</tbody>
                         </table>
                     </div>
                 )}

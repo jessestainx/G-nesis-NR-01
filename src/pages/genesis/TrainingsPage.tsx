@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { GraduationCap, Plus, X, Search, Users, CalendarDays, ChevronRight } from 'lucide-react'
+import { GraduationCap, Plus, X, Search, Users, CalendarDays, ChevronRight, Ban } from 'lucide-react'
 import { useOrganizations } from '@/hooks/queries/useOrganizations'
 import { useTrainings, useCreateTraining, useUpdateTrainingStatus } from '@/hooks/queries/useTrainings'
 import { SectionLoader } from '@/components/ui/LoadingSpinner'
@@ -67,16 +67,28 @@ function TrainingRow({ t, orgId }: { t: Training; orgId: string }) {
                 ) : '—'}
             </td>
             <td className="px-4 py-3 text-right">
-                {next && (
-                    <button
-                        onClick={() => void advance.mutate({ id: t.id, organizationId: orgId, status: next })}
-                        disabled={advance.isPending}
-                        title={`Avançar para ${STATUS_LABEL[next]}`}
-                        className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-600 hover:border-[#00A898] hover:text-[#00A898] disabled:opacity-40 dark:border-gray-700 dark:text-gray-400"
-                    >
-                        {STATUS_LABEL[next]} <ChevronRight size={11} />
-                    </button>
-                )}
+                <div className="flex items-center justify-end gap-1">
+                    {next && (
+                        <button
+                            onClick={() => void advance.mutate({ id: t.id, organizationId: orgId, status: next })}
+                            disabled={advance.isPending}
+                            title={`Avançar para ${STATUS_LABEL[next]}`}
+                            className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-600 hover:border-[#00A898] hover:text-[#00A898] disabled:opacity-40 dark:border-gray-700 dark:text-gray-400"
+                        >
+                            {STATUS_LABEL[next]} <ChevronRight size={11} />
+                        </button>
+                    )}
+                    {(t.status === 'scheduled' || t.status === 'in_progress') && (
+                        <button
+                            onClick={() => void advance.mutate({ id: t.id, organizationId: orgId, status: 'cancelled' })}
+                            disabled={advance.isPending}
+                            title="Cancelar treinamento"
+                            className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-xs text-rose-500 hover:border-rose-300 hover:bg-rose-50 disabled:opacity-40"
+                        >
+                            <Ban size={11} /> Cancelar
+                        </button>
+                    )}
+                </div>
             </td>
         </tr>
     )
