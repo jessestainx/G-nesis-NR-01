@@ -138,3 +138,30 @@ export function useCreateTransaction() {
         onError: (e) => toast.error(e instanceof Error ? e.message : 'Erro ao registrar transação'),
     })
 }
+
+export function useDeleteCrmContact() {
+    const qc = useQueryClient()
+    const { user } = useAuth()
+    return useMutation({
+        mutationFn: (id: string) => crmService.deleteContact(id, user!.id),
+        onSuccess: () => {
+            void qc.invalidateQueries({ queryKey: crmKeys.all })
+            toast.success('Contato excluído')
+        },
+        onError: (e: Error) => toast.error(e.message || 'Erro ao excluir contato'),
+    })
+}
+
+export function useDeleteTransaction() {
+    const qc = useQueryClient()
+    const { user } = useAuth()
+    return useMutation({
+        mutationFn: (vars: { id: string; organizationId?: string }) =>
+            financeService.deleteTransaction(vars.id, user!.id, vars.organizationId),
+        onSuccess: () => {
+            void qc.invalidateQueries({ queryKey: financeKeys.all })
+            toast.success('Transação excluída')
+        },
+        onError: (e: Error) => toast.error(e.message || 'Erro ao excluir transação'),
+    })
+}

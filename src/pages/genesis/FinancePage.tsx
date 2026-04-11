@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { Plus, X, DollarSign, Download } from 'lucide-react'
+import { Plus, X, DollarSign, Download, Trash2 } from 'lucide-react'
 import Papa from 'papaparse'
 import type { FinancialTransaction } from '@/types'
 import {
     useFinanceSummary,
     useFinanceTransactions,
     useCreateTransaction,
+    useDeleteTransaction,
 } from '@/hooks/queries/useFinance'
 import { SectionLoader } from '@/components/ui/LoadingSpinner'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -178,6 +179,8 @@ function exportTransactionsCSV(txs: FinancialTransaction[], from: string, to: st
 }
 
 function TransactionRow({ tx }: { tx: FinancialTransaction }) {
+    const del = useDeleteTransaction()
+    const [confirmDel, setConfirmDel] = useState(false)
     return (
         <tr className="border-b border-gray-100 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800/50">
             <td className="px-4 py-3 text-sm text-gray-600">{formatDate(tx.reference_date)}</td>
@@ -187,6 +190,22 @@ function TransactionRow({ tx }: { tx: FinancialTransaction }) {
                 <span className={`text-xs font-medium ${typeColor[tx.type]}`}>{typeLabel[tx.type]}</span>
             </td>
             <td className="px-4 py-3 text-sm font-semibold text-gray-900 text-right">{formatCurrency(tx.amount)}</td>
+            <td className="px-4 py-3 text-right">
+                {!confirmDel ? (
+                    <button onClick={() => setConfirmDel(true)} title="Excluir transação"
+                        className="rounded p-1 text-gray-300 hover:bg-red-50 hover:text-red-500">
+                        <Trash2 size={13} />
+                    </button>
+                ) : (
+                    <span className="flex items-center justify-end gap-1">
+                        <span className="text-xs text-red-600">Confirmar?</span>
+                        <button onClick={() => void del.mutateAsync({ id: tx.id, organizationId: tx.organization_id ?? undefined })}
+                            disabled={del.isPending}
+                            className="rounded px-1.5 py-0.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-40">Sim</button>
+                        <button onClick={() => setConfirmDel(false)} className="text-xs text-gray-400 hover:text-gray-600">Não</button>
+                    </span>
+                )}
+            </td>
         </tr>
     )
 }
@@ -233,6 +252,7 @@ function TransactionsTable({ from, to, onNew }: { from: string; to: string; onNe
                                 <th className="px-4 py-2">Data</th><th className="px-4 py-2">Descrição</th>
                                 <th className="px-4 py-2">Categoria</th><th className="px-4 py-2">Tipo</th>
                                 <th className="px-4 py-2 text-right">Valor</th>
+                                <th className="px-4 py-2 w-8"></th>
                             </tr>
                         </thead>
                         <tbody>{txs.map((tx) => <TransactionRow key={tx.id} tx={tx} />)}</tbody>

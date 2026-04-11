@@ -47,4 +47,22 @@ export const financeService = {
         }
         return result
     },
+
+    async deleteTransaction(
+        id: string,
+        actorId: string,
+        organizationId?: string,
+    ): Promise<{ error: string | null }> {
+        const result = await financeRepository.delete(id)
+        if (!result.error) {
+            await auditRepository.log({
+                userId: actorId,
+                action: 'finance.transaction.delete',
+                entityType: 'financial_transactions',
+                entityId: id,
+                organizationId,
+            })
+        }
+        return result
+    },
 }

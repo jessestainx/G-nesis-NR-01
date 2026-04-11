@@ -110,4 +110,20 @@ export const crmService = {
         }
         return result
     },
+
+    async deleteContact(
+        id: string,
+        actorId: string,
+    ): Promise<{ error: string | null }> {
+        const result = await crmRepository.delete(id)
+        if (!result.error) {
+            await auditRepository.log({
+                userId: actorId,
+                action: 'crm.contact.delete',
+                entityType: 'crm_contacts',
+                entityId: id,
+            })
+        }
+        return result
+    },
 }

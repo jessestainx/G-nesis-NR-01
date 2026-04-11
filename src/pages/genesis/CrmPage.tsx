@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { Plus, X, ArrowRight } from 'lucide-react'
+import { Plus, X, ArrowRight, Trash2 } from 'lucide-react'
 import type { CrmContact, Contract } from '@/types'
 import {
     useCrmContacts,
     useActiveContracts,
     useCreateCrmContact,
     useUpdateCrmContact,
+    useDeleteCrmContact,
 } from '@/hooks/queries/useFinance'
 import { SectionLoader } from '@/components/ui/LoadingSpinner'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
@@ -115,6 +116,8 @@ function NewContactModal({ onClose }: NewContactModalProps) {
 
 function ContactRow({ contact }: { contact: CrmContact }) {
     const update = useUpdateCrmContact()
+    const del = useDeleteCrmContact()
+    const [confirmDel, setConfirmDel] = useState(false)
     const currentIdx = STAGES.indexOf(contact.stage)
     const nextStage = currentIdx < STAGES.length - 1 ? STAGES[currentIdx + 1] : null
 
@@ -130,16 +133,32 @@ function ContactRow({ contact }: { contact: CrmContact }) {
             </td>
             <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{formatDate(contact.created_at)}</td>
             <td className="px-4 py-3">
-                {nextStage && (
-                    <button
-                        onClick={() => void update.mutateAsync({ id: contact.id, stage: nextStage })}
-                        disabled={update.isPending}
-                        title={`Avançar para ${crmStageLabel[nextStage]}`}
-                        className="flex items-center gap-1 rounded px-2 py-1 text-xs text-gray-500 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-40">
-                        <ArrowRight size={12} />
-                        {crmStageLabel[nextStage]}
-                    </button>
-                )}
+                <div className="flex items-center gap-1">
+                    {nextStage && (
+                        <button
+                            onClick={() => void update.mutateAsync({ id: contact.id, stage: nextStage })}
+                            disabled={update.isPending}
+                            title={`Avançar para ${crmStageLabel[nextStage]}`}
+                            className="flex items-center gap-1 rounded px-2 py-1 text-xs text-gray-500 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-40">
+                            <ArrowRight size={12} />
+                            {crmStageLabel[nextStage]}
+                        </button>
+                    )}
+                    {!confirmDel ? (
+                        <button onClick={() => setConfirmDel(true)} title="Excluir contato"
+                            className="rounded p-1 text-gray-300 hover:bg-red-50 hover:text-red-500">
+                            <Trash2 size={13} />
+                        </button>
+                    ) : (
+                        <span className="flex items-center gap-1">
+                            <span className="text-xs text-red-600">Confirmar?</span>
+                            <button onClick={() => void del.mutateAsync(contact.id)}
+                                disabled={del.isPending}
+                                className="rounded px-1.5 py-0.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-40">Sim</button>
+                            <button onClick={() => setConfirmDel(false)} className="text-xs text-gray-400 hover:text-gray-600">Não</button>
+                        </span>
+                    )}
+                </div>
             </td>
         </tr>
     )
