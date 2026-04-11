@@ -129,7 +129,9 @@ export interface Document {
 export interface PulseQuestion {
     id: string
     text: string
-    type: 'scale' | 'yesno' | 'text'
+    type: 'scale' | 'yesno' | 'text' | 'multiple'
+    required?: boolean
+    options?: string[]
     min?: number
     max?: number
 }

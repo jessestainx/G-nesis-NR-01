@@ -48,8 +48,15 @@ function AvatarSection() {
             return
         }
 
-        const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path)
-        const publicUrl = `${urlData.publicUrl}?t=${Date.now()}`
+        const { data: urlData, error: urlErr } = await supabase.storage
+            .from('avatars')
+            .createSignedUrl(path, 31536000) // 1 ano
+        if (urlErr || !urlData) {
+            setUploadError('Erro ao obter URL do avatar')
+            setUploading(false)
+            return
+        }
+        const publicUrl = urlData.signedUrl
 
         await profileService.updateAvatar(user.id, publicUrl, user.id)
         await refreshProfile()

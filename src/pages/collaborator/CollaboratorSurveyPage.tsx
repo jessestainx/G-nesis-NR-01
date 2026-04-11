@@ -6,7 +6,7 @@ import {
     useSubmitPulseResponse,
 } from '@/hooks/queries/usePulseSurveys'
 import { SectionLoader } from '@/components/ui/LoadingSpinner'
-import { ClipboardList, CheckCircle, Clock, Send } from 'lucide-react'
+import { ClipboardList, CheckCircle, Clock, Send, ChevronLeft, ChevronRight } from 'lucide-react'
 import type { PulseQuestion } from '@/types'
 
 // ─── Componente de pergunta ───────────────────────────────────────────────────
@@ -24,7 +24,7 @@ function QuestionInput({ question, value, onChange }: QuestionInputProps) {
         return (
             <div className="flex items-center gap-2">
                 <span className="w-6 text-xs text-gray-400">{min}</span>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                     {Array.from({ length: max - min + 1 }, (_, i) => i + min).map((n) => (
                         <button
                             key={n}
@@ -64,6 +64,33 @@ function QuestionInput({ question, value, onChange }: QuestionInputProps) {
         )
     }
 
+    if (question.type === 'multiple') {
+        const options = question.options ?? []
+        return (
+            <div className="space-y-2">
+                {options.map((opt) => (
+                    <label
+                        key={opt}
+                        className={`flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-sm transition-colors ${
+                            value === opt
+                                ? 'border-[#00A898] bg-[#00A898]/5 text-[#00A898]'
+                                : 'border-gray-200 text-gray-700 hover:border-[#00A898]/50'
+                        }`}>
+                        <input
+                            type="radio"
+                            name={`q-${question.id}`}
+                            value={opt}
+                            checked={value === opt}
+                            onChange={() => onChange(opt)}
+                            className="accent-[#00A898]"
+                        />
+                        {opt}
+                    </label>
+                ))}
+            </div>
+        )
+    }
+
     // text
     return (
         <textarea
@@ -76,7 +103,7 @@ function QuestionInput({ question, value, onChange }: QuestionInputProps) {
     )
 }
 
-// ─── Formulário de pesquisa ───────────────────────────────────────────────────
+// ─── Formulário de pesquisa (passo a passo) ───────────────────────────────────
 
 interface SurveyFormProps {
     surveyId: string
@@ -89,14 +116,33 @@ function SurveyForm({ surveyId, questions, onSubmitted }: SurveyFormProps) {
     const { user } = useAuth()
     const submit = useSubmitPulseResponse()
     const [answers, setAnswers] = useState<Record<string, string | number | boolean>>({})
+    const [step, setStep] = useState(0)
+    const [stepError, setStepError] = useState<string | null>(null)
     const [submitError, setSubmitError] = useState<string | null>(null)
 
-    const requiredIds = questions.filter((q) => q.type !== 'text').map((q) => q.id)
-    const allAnswered = requiredIds.every((id) => answers[id] !== undefined)
+    const total = questions.length
+    const current = questions[step]
+    const isLast = step === total - 1
+    const progress = Math.round(((step + 1) / total) * 100)
 
-    async function handleSubmit(e: React.FormEvent) {
-        e.preventDefault()
-        if (!allAnswered) { setSubmitError('Por favor, responda todas as perguntas.'); return }
+    const isRequired = current.required !== false && current.type !== 'text'
+    const hasAnswer = answers[current.id] !== undefined && answers[current.id] !== ''
+
+    function handleNext() {
+        if (isRequired && !hasAnswer) {
+            setStepError('Por favor, responda esta pergunta para continuar.')
+            return
+        }
+        setStepError(null)
+        setStep((s) => s + 1)
+    }
+
+    async function handleSubmit() {
+        if (isRequired && !hasAnswer) {
+            setStepError('Por favor, responda esta pergunta para enviar.')
+            return
+        }
+        setStepError(null)
         setSubmitError(null)
         try {
             const result = await submit.mutateAsync({
@@ -112,32 +158,71 @@ function SurveyForm({ surveyId, questions, onSubmitted }: SurveyFormProps) {
     }
 
     return (
-        <form onSubmit={(e) => void handleSubmit(e)} className="space-y-6">
-            {questions.map((q, i) => (
-                <div key={q.id} className="space-y-2">
-                    <p className="text-sm font-medium text-gray-800">
-                        <span className="mr-2 text-gray-400">{i + 1}.</span>
-                        {q.text}
-                        {q.type !== 'text' && <span className="ml-1 text-rose-500">*</span>}
-                    </p>
-                    <QuestionInput
-                        question={q}
-                        value={answers[q.id]}
-                        onChange={(val) => setAnswers((prev) => ({ ...prev, [q.id]: val }))}
+        <div className="space-y-5">
+            {/* Barra de progresso */}
+            <div className="space-y-1">
+                <div className="flex items-center justify-between text-xs text-gray-500">
+                    <span>Pergunta {step + 1} de {total}</span>
+                    <span>{progress}%</span>
+                </div>
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+                    <div
+                        className="h-full rounded-full bg-[#00A898] transition-all duration-300"
+                        style={{ width: `${progress}%` }}
                     />
                 </div>
-            ))}
+            </div>
+
+            {/* Pergunta atual */}
+            <div className="space-y-3">
+                <p className="text-sm font-medium text-gray-800">
+                    {current.text}
+                    {isRequired && <span className="ml-1 text-rose-500">*</span>}
+                </p>
+                <QuestionInput
+                    question={current}
+                    value={answers[current.id]}
+                    onChange={(val) => {
+                        setAnswers((prev) => ({ ...prev, [current.id]: val }))
+                        setStepError(null)
+                    }}
+                />
+                {stepError && <p className="text-xs text-red-600">{stepError}</p>}
+            </div>
 
             {submitError && <p className="text-sm text-red-600">{submitError}</p>}
 
-            <button
-                type="submit"
-                disabled={submit.isPending || !allAnswered}
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#162136] py-2.5 text-sm font-medium text-white hover:bg-[#1E2F4A] disabled:opacity-50">
-                <Send size={14} />
-                {submit.isPending ? 'Enviando…' : 'Enviar Resposta'}
-            </button>
-        </form>
+            {/* Navegação */}
+            <div className="flex items-center justify-between gap-3 pt-2">
+                <button
+                    type="button"
+                    onClick={() => { setStepError(null); setStep((s) => s - 1) }}
+                    disabled={step === 0}
+                    className="flex items-center gap-1 rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-30">
+                    <ChevronLeft size={15} />
+                    Anterior
+                </button>
+
+                {isLast ? (
+                    <button
+                        type="button"
+                        onClick={() => void handleSubmit()}
+                        disabled={submit.isPending}
+                        className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#162136] py-2 text-sm font-medium text-white hover:bg-[#1E2F4A] disabled:opacity-50">
+                        <Send size={14} />
+                        {submit.isPending ? 'Enviando…' : 'Enviar Resposta'}
+                    </button>
+                ) : (
+                    <button
+                        type="button"
+                        onClick={handleNext}
+                        className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-[#00A898] py-2 text-sm font-medium text-white hover:bg-[#008f80]">
+                        Próxima
+                        <ChevronRight size={15} />
+                    </button>
+                )}
+            </div>
+        </div>
     )
 }
 
