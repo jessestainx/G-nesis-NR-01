@@ -5,6 +5,7 @@ import {
     useAllPulseSurveys,
     useCreatePulseSurvey,
     useUpdateSurveyStatus,
+    usePulseResponses,
 } from '@/hooks/queries/usePulseSurveys'
 import { SectionLoader } from '@/components/ui/LoadingSpinner'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
@@ -102,17 +103,89 @@ function SurveyRow({ s, orgName }: SurveyRowProps) {
                                             <span className="shrink-0 font-medium text-gray-400">{i + 1}.</span>
                                             <span>{q.text}</span>
                                             <span className="ml-auto shrink-0 text-xs text-gray-400">
-                                                {q.type === 'scale' ? `Escala ${q.min ?? 1}–${q.max ?? 5}` : q.type === 'yesno' ? 'Sim/Não' : 'Texto'}
+                                                {q.type === 'scale' ? `Escala ${q.min ?? 1}–${q.max ?? 5}` : q.type === 'yesno' ? 'Sim/Não' : q.type === 'multiple' ? `Múltipla (${q.options?.length ?? 0})` : 'Texto'}
                                             </span>
                                         </li>
                                     ))}
                                 </ol>
+                            )}
+                            {(s.status === 'active' || s.status === 'closed') && s.questions?.questions?.length > 0 && (
+                                <SurveyResults surveyId={s.id} questions={s.questions.questions} />
                             )}
                         </div>
                     </td>
                 </tr>
             )}
         </>
+    )
+}
+
+// ─── Resultados agregados ─────────────────────────────────────────────────────
+
+function SurveyResults({ surveyId, questions }: { surveyId: string; questions: PulseQuestion[] }) {
+    const { data: responses, isLoading } = usePulseResponses(surveyId)
+
+    if (isLoading) return <p className="text-xs text-gray-400">Carregando respostas...</p>
+    if (!responses?.length) return <p className="text-xs text-gray-400">Nenhuma resposta registrada ainda.</p>
+
+    return (
+        <div className="space-y-4 border-t border-gray-200 pt-4 dark:border-gray-700">
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Resultados ({responses.length} resposta{responses.length !== 1 ? 's' : ''})</p>
+            {questions.map((q) => {
+                const vals = responses.map((r) => r.answers[q.id]).filter((v) => v !== undefined && v !== '')
+                if (!vals.length) return null
+
+                if (q.type === 'scale') {
+                    const nums = vals.filter((v) => typeof v === 'number') as number[]
+                    const avg = nums.length ? (nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(1) : '—'
+                    const min = q.min ?? 1
+                    const max = q.max ?? 5
+                    const pct = nums.length ? Math.round(((parseFloat(avg) - min) / (max - min)) * 100) : 0
+                    return (
+                        <div key={q.id} className="space-y-1">
+                            <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{q.text}</p>
+                            <div className="flex items-center gap-3">
+                                <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-700">
+                                    <div className="h-2 rounded-full bg-[#00A898]" style={{ width: `${pct}%` }} />
+                                </div>
+                                <span className="w-16 text-right text-xs text-gray-500">Média: {avg}</span>
+                            </div>
+                        </div>
+                    )
+                }
+
+                if (q.type === 'yesno' || q.type === 'multiple') {
+                    const opts = q.type === 'yesno' ? ['sim', 'não'] : (q.options ?? [])
+                    const total = vals.length
+                    return (
+                        <div key={q.id} className="space-y-1">
+                            <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{q.text}</p>
+                            {opts.map((opt) => {
+                                const count = vals.filter((v) => String(v).toLowerCase() === opt.toLowerCase()).length
+                                const pct = total ? Math.round((count / total) * 100) : 0
+                                return (
+                                    <div key={opt} className="flex items-center gap-2">
+                                        <span className="w-20 truncate text-xs text-gray-500">{opt.charAt(0).toUpperCase() + opt.slice(1)}</span>
+                                        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-700">
+                                            <div className="h-1.5 rounded-full bg-[#00A898]" style={{ width: `${pct}%` }} />
+                                        </div>
+                                        <span className="w-14 text-right text-xs text-gray-400">{count} ({pct}%)</span>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    )
+                }
+
+                // text
+                return (
+                    <div key={q.id} className="space-y-1">
+                        <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{q.text}</p>
+                        <p className="text-xs text-gray-400">{vals.length} resposta{vals.length !== 1 ? 's' : ''} de texto.</p>
+                    </div>
+                )
+            })}
+        </div>
     )
 }
 
@@ -137,15 +210,25 @@ function NewSurveyModal({ onClose }: NewSurveyModalProps) {
     const [questions, setQuestions] = useState<PulseQuestion[]>(DEFAULT_QUESTIONS)
     const [newQ, setNewQ] = useState('')
     const [newQType, setNewQType] = useState<PulseQuestion['type']>('scale')
+    const [newQOptions, setNewQOptions] = useState('')
     const [fieldError, setFieldError] = useState<string | null>(null)
 
     function addQuestion() {
         if (!newQ.trim()) return
+        const options = newQType === 'multiple'
+            ? newQOptions.split(',').map((o) => o.trim()).filter(Boolean)
+            : undefined
+        if (newQType === 'multiple' && (!options || options.length < 2)) {
+            setFieldError('Múltipla escolha requer ao menos 2 opções separadas por vírgula.')
+            return
+        }
+        setFieldError(null)
         setQuestions((prev) => [
             ...prev,
-            { id: `q${Date.now()}`, text: newQ.trim(), type: newQType, min: 1, max: 5 },
+            { id: `q${Date.now()}`, text: newQ.trim(), type: newQType, min: 1, max: 5, options },
         ])
         setNewQ('')
+        setNewQOptions('')
     }
 
     function removeQuestion(id: string) {
@@ -205,7 +288,7 @@ function NewSurveyModal({ onClose }: NewSurveyModalProps) {
                                     <span className="shrink-0 font-medium text-gray-400">{i + 1}.</span>
                                     <span className="flex-1 text-gray-700">{q.text}</span>
                                     <span className="shrink-0 text-xs text-gray-400">
-                                        {q.type === 'scale' ? `${q.min ?? 1}–${q.max ?? 5}` : q.type === 'yesno' ? 'S/N' : 'Texto'}
+                                        {q.type === 'scale' ? `${q.min ?? 1}–${q.max ?? 5}` : q.type === 'yesno' ? 'S/N' : q.type === 'multiple' ? `Mult.(${q.options?.length ?? 0})` : 'Texto'}
                                     </span>
                                     <button type="button" onClick={() => removeQuestion(q.id)}
                                         className="shrink-0 text-gray-300 hover:text-red-500">
@@ -218,10 +301,11 @@ function NewSurveyModal({ onClose }: NewSurveyModalProps) {
                             <input value={newQ} onChange={(e) => setNewQ(e.target.value)}
                                 placeholder="Nova pergunta..."
                                 className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00A898]" />
-                            <select value={newQType} onChange={(e) => setNewQType(e.target.value as PulseQuestion['type'])}
+                            <select value={newQType} onChange={(e) => { setNewQType(e.target.value as PulseQuestion['type']); setNewQOptions('') }}
                                 className="rounded-lg border border-gray-300 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#00A898]">
                                 <option value="scale">Escala</option>
                                 <option value="yesno">Sim/Não</option>
+                                <option value="multiple">Múltipla</option>
                                 <option value="text">Texto</option>
                             </select>
                             <button type="button" onClick={addQuestion}
@@ -229,6 +313,13 @@ function NewSurveyModal({ onClose }: NewSurveyModalProps) {
                                 <Plus size={13} />
                             </button>
                         </div>
+                        {newQType === 'multiple' && (
+                            <div className="mt-1">
+                                <input value={newQOptions} onChange={(e) => setNewQOptions(e.target.value)}
+                                    placeholder="Opções separadas por vírgula: Ex: Sempre, Às vezes, Nunca"
+                                    className="w-full rounded-lg border border-dashed border-[#00A898]/50 bg-[#00A898]/5 px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#00A898]" />
+                            </div>
+                        )}
                     </div>
 
                     {(fieldError ?? mutError) && <p className="text-xs text-red-600">{fieldError ?? mutError}</p>}
