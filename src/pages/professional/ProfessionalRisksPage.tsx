@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { Plus, X, AlertTriangle } from 'lucide-react'
+import { Plus, X, AlertTriangle, Trash2 } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
-import { useRisks, useCreateRisk } from '@/hooks/queries/useDiagnosis'
+import { useRisks, useCreateRisk, useDeleteRisk } from '@/hooks/queries/useDiagnosis'
 import { SectionLoader } from '@/components/ui/LoadingSpinner'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -23,13 +23,31 @@ function LevelBadge({ level }: { level: string }) {
     )
 }
 
-function RiskRow({ risk }: { risk: PsychosocialRisk }) {
+function RiskRow({ risk, orgId }: { risk: PsychosocialRisk; orgId: string }) {
+    const del = useDeleteRisk()
+
+    function handleDelete(e: React.MouseEvent) {
+        e.stopPropagation()
+        if (!window.confirm(`Excluir o risco "${risk.category}"? Esta ação não pode ser desfeita.`)) return
+        void del.mutate({ id: risk.id, orgId })
+    }
+
     return (
         <tr className="border-b border-gray-100 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800">
             <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">{risk.category}</td>
             <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{risk.description}</td>
             <td className="px-4 py-3"><LevelBadge level={risk.level} /></td>
             <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{formatDate(risk.identified_at)}</td>
+            <td className="px-4 py-3">
+                <button
+                    onClick={handleDelete}
+                    disabled={del.isPending}
+                    title="Excluir risco"
+                    className="inline-flex items-center rounded-md border border-rose-200 bg-rose-50 p-1.5 text-rose-600 transition-colors hover:bg-rose-100 disabled:opacity-40 dark:border-rose-800 dark:bg-rose-950 dark:text-rose-400"
+                >
+                    <Trash2 size={13} />
+                </button>
+            </td>
         </tr>
     )
 }
@@ -135,7 +153,8 @@ function OrgRisksBlock({ orgId, orgName }: { orgId: string; orgName: string }) {
                 </button>
             </div>
             {!risks || risks.length === 0 ? (
-                <EmptyState icon={AlertTriangle} title="Nenhum risco cadastrado" description="Registre os riscos psicossociais mapeados." />) : (
+                <EmptyState icon={AlertTriangle} title="Nenhum risco cadastrado" description="Registre os riscos psicossociais mapeados." />
+            ) : (
                 <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
                     <table className="w-full">
                         <thead>
@@ -144,9 +163,10 @@ function OrgRisksBlock({ orgId, orgName }: { orgId: string; orgName: string }) {
                                 <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">Descrição</th>
                                 <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">Nível</th>
                                 <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">Identificado em</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">Ações</th>
                             </tr>
                         </thead>
-                        <tbody>{risks.map((risk) => <RiskRow key={risk.id} risk={risk} />)}</tbody>
+                        <tbody>{risks.map((risk) => <RiskRow key={risk.id} risk={risk} orgId={orgId} />)}</tbody>
                     </table>
                 </div>
             )}

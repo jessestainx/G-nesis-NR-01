@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react'
 import { z } from 'zod'
-import { Plus, X, UserPlus, Search, UserX, UserCheck, MoreHorizontal } from 'lucide-react'
+import { Plus, X, UserPlus, Search, UserX, UserCheck, MoreHorizontal, Pencil } from 'lucide-react'
 import type { Profile, UserRole } from '@/types'
-import { useOrganizationProfiles, useInviteUser, useDeactivateUser, useReactivateUser } from '@/hooks/queries/useProfiles'
+import { useOrganizationProfiles, useInviteUser, useDeactivateUser, useReactivateUser, useUpdateProfile } from '@/hooks/queries/useProfiles'
 import { useAuth } from '@/hooks/useAuth'
 import { useOrganizations } from '@/hooks/queries/useOrganizations'
 import { SectionLoader } from '@/components/ui/LoadingSpinner'
@@ -123,6 +123,81 @@ function InviteModal({ onClose, orgId }: InviteModalProps) {
     )
 }
 
+// ─── Modal editar usuário ─────────────────────────────────────────────────────
+
+interface EditUserModalProps { profile: Profile; onClose: () => void }
+
+function EditUserModal({ profile, onClose }: EditUserModalProps) {
+    const { data: orgs } = useOrganizations()
+    const update = useUpdateProfile()
+    const [role, setRole] = useState<UserRole>(profile.role)
+    const [orgId, setOrgId] = useState(profile.organization_id ?? '')
+
+    async function handleSubmit(e: React.FormEvent) {
+        e.preventDefault()
+        try {
+            await update.mutateAsync({
+                id: profile.id,
+                payload: {
+                    role,
+                    organization_id: orgId || null,
+                },
+            })
+            onClose()
+        } catch {
+            // handled via update.error
+        }
+    }
+
+    const mutError = update.error instanceof Error ? update.error.message : null
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <div className="w-full max-w-md rounded-xl bg-white shadow-xl">
+                <div className="flex items-center justify-between border-b px-6 py-4">
+                    <div>
+                        <h2 className="text-base font-semibold text-gray-900">Editar Usuário</h2>
+                        <p className="text-xs text-gray-500">{profile.name} · {profile.email}</p>
+                    </div>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+                </div>
+                <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4 px-6 py-4">
+                    <div>
+                        <label className="mb-1 block text-xs font-medium text-gray-700">Papel</label>
+                        <select value={role} onChange={(e) => setRole(e.target.value as UserRole)}
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00A898]">
+                            <option value="client_executive">Empresa (Executivo)</option>
+                            <option value="collaborator">Colaborador</option>
+                            <option value="professional">Profissional</option>
+                            <option value="genesis">Genesis (Admin)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label className="mb-1 block text-xs font-medium text-gray-700">Organização</label>
+                        <select value={orgId} onChange={(e) => setOrgId(e.target.value)}
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00A898]">
+                            <option value="">Sem organização</option>
+                            {orgs?.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+                        </select>
+                    </div>
+                    {mutError && <p className="text-xs text-red-600">{mutError}</p>}
+                    <div className="flex justify-end gap-2 pt-2">
+                        <button type="button" onClick={onClose}
+                            className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                            Cancelar
+                        </button>
+                        <button type="submit" disabled={update.isPending}
+                            className="flex items-center gap-2 rounded-lg bg-[#162136] px-4 py-2 text-sm text-white hover:bg-[#1E2F4A] disabled:opacity-50">
+                            <Pencil size={14} />
+                            {update.isPending ? 'Salvando…' : 'Salvar'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    )
+}
+
 // ─── Modal confirmar desativação ─────────────────────────────────────────────
 
 interface ConfirmDeactivateModalProps {
@@ -172,6 +247,7 @@ function UserRow({ profile, currentUserId }: { profile: Profile; currentUserId: 
     const reactivate = useReactivateUser()
     const [showMenu, setShowMenu] = useState(false)
     const [showConfirm, setShowConfirm] = useState(false)
+    const [showEdit, setShowEdit] = useState(false)
     const isSelf = profile.id === currentUserId
     const isActive = profile.active !== false  // default true when field is missing
 
@@ -187,6 +263,9 @@ function UserRow({ profile, currentUserId }: { profile: Profile; currentUserId: 
 
     return (
         <>
+            {showEdit && (
+                <EditUserModal profile={profile} onClose={() => { setShowEdit(false); setShowMenu(false) }} />
+            )}
             {showConfirm && (
                 <ConfirmDeactivateModal
                     profile={profile}
@@ -223,6 +302,11 @@ function UserRow({ profile, currentUserId }: { profile: Profile; currentUserId: 
                                 <>
                                     <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)} />
                                     <div className="absolute right-0 z-20 mt-1 w-48 rounded-lg border border-gray-200 bg-white shadow-lg">
+                                        <button
+                                            onClick={() => { setShowMenu(false); setShowEdit(true) }}
+                                            className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
+                                            <Pencil size={14} /> Editar papel / org
+                                        </button>
                                         {isActive ? (
                                             <button
                                                 onClick={() => { setShowMenu(false); setShowConfirm(true) }}
