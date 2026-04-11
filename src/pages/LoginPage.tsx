@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react"
 import { Navigate, useLocation } from "react-router-dom"
 import { useAuth } from "@/hooks/useAuth"
+import { supabase } from "@/lib/supabase"
 import { ErrorMessage } from "@/components/ui/ErrorMessage"
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner"
 import { ShieldCheck, Building2, User } from "lucide-react"
@@ -22,7 +23,9 @@ export function LoginPage() {
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [error, setError] = useState<string | null>(null)
+    const [success, setSuccess] = useState<string | null>(null)
     const [submitting, setSubmitting] = useState(false)
+    const [forgotLoading, setForgotLoading] = useState(false)
 
     if (isLoading) {
         return (
@@ -39,10 +42,30 @@ export function LoginPage() {
     async function handleSubmit(e: FormEvent) {
         e.preventDefault()
         setError(null)
+        setSuccess(null)
         setSubmitting(true)
         const { error: authError } = await signIn(email, password)
         if (authError) setError(authError)
         setSubmitting(false)
+    }
+
+    async function handleForgotPassword() {
+        if (!email.trim()) {
+            setError('Digite seu e-mail acima para recuperar a senha.')
+            return
+        }
+        setError(null)
+        setSuccess(null)
+        setForgotLoading(true)
+        const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+            redirectTo: `${window.location.origin}/profile`,
+        })
+        setForgotLoading(false)
+        if (resetError) {
+            setError(resetError.message)
+        } else {
+            setSuccess('E-mail de recuperação enviado! Verifique sua caixa de entrada.')
+        }
     }
 
     const active = ROLE_TABS.find((t) => t.id === activeTab)!
@@ -141,7 +164,14 @@ export function LoginPage() {
                         <div>
                             <div className="flex items-center justify-between mb-1">
                                 <label htmlFor="password" className="block text-sm font-medium text-gray-700">Senha</label>
-                                <button type="button" className="text-xs text-[#00A898] hover:underline">Esqueceu a senha?</button>
+                                <button
+                                    type="button"
+                                    onClick={() => void handleForgotPassword()}
+                                    disabled={forgotLoading}
+                                    className="text-xs text-[#00A898] hover:underline disabled:opacity-50"
+                                >
+                                    {forgotLoading ? 'Enviando…' : 'Esqueceu a senha?'}
+                                </button>
                             </div>
                             <input
                                 id="password" type="password" autoComplete="current-password" required
@@ -149,7 +179,12 @@ export function LoginPage() {
                                 className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-[#00A898] focus:outline-none focus:ring-1 focus:ring-[#00A898]"
                             />
                         </div>
-                        <ErrorMessage message={error} />
+                        {error && <ErrorMessage message={error} />}
+                        {success && (
+                            <p className="rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700 border border-green-200">
+                                {success}
+                            </p>
+                        )}
                         <button
                             type="submit" disabled={submitting}
                             className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#162136] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#1E2F4A] disabled:opacity-50"
