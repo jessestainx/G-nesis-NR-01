@@ -4,7 +4,7 @@ import type { ActionPlan, ActionItem } from '@/types'
 import { useOrganizations } from '@/hooks/queries/useOrganizations'
 import {
     useActionPlans, useActionPlanItems,
-    useCreateActionPlan, useUpdateActionPlan, useUpdateActionItem,
+    useCreateActionPlan, useUpdateActionPlan, useUpdateActionItem, useCreateActionItem,
 } from '@/hooks/queries/useActionPlans'
 import { SectionLoader } from '@/components/ui/LoadingSpinner'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
@@ -105,41 +105,97 @@ function NewPlanModal({ orgId, orgName, onClose }: NewPlanModalProps) {
 
 // ─── Itens do plano (expansível) ──────────────────────────────────────────────
 
+function AddItemForm({ planId }: { planId: string }) {
+    const create = useCreateActionItem()
+    const [title, setTitle] = useState('')
+    const [dueDate, setDueDate] = useState('')
+    const [open, setOpen] = useState(false)
+
+    async function handleSubmit(e: React.FormEvent) {
+        e.preventDefault()
+        if (!title.trim()) return
+        await create.mutateAsync({
+            action_plan_id: planId,
+            title: title.trim(),
+            status: 'pending',
+            due_date: dueDate || null,
+            responsible_id: null,
+        })
+        setTitle('')
+        setDueDate('')
+        setOpen(false)
+    }
+
+    if (!open) {
+        return (
+            <button onClick={() => setOpen(true)}
+                className="flex items-center gap-1 rounded px-2 py-1 text-xs text-gray-400 hover:bg-gray-100 hover:text-[#00A898] dark:hover:bg-gray-700">
+                <Plus size={12} /> Adicionar item
+            </button>
+        )
+    }
+
+    return (
+        <form onSubmit={(e) => void handleSubmit(e)} className="flex items-center gap-2">
+            <input
+                autoFocus
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Título do item…"
+                className="flex-1 rounded border border-gray-300 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[#00A898] dark:border-gray-600 dark:bg-gray-800 dark:text-white" />
+            <input
+                type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+                className="rounded border border-gray-300 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[#00A898] dark:border-gray-600 dark:bg-gray-800 dark:text-white" />
+            <button type="submit" disabled={create.isPending || !title.trim()}
+                className="rounded bg-[#162136] px-2 py-1 text-xs text-white hover:bg-[#1E2F4A] disabled:opacity-50">
+                {create.isPending ? '…' : 'OK'}
+            </button>
+            <button type="button" onClick={() => { setOpen(false); setTitle(''); setDueDate('') }}
+                className="rounded p-1 text-gray-400 hover:text-gray-600"><X size={12} /></button>
+        </form>
+    )
+}
+
 function PlanItems({ planId }: { planId: string }) {
     const { data: items, isLoading } = useActionPlanItems(planId)
     const updateItem = useUpdateActionItem()
 
     if (isLoading) return <p className="px-6 py-3 text-xs text-gray-400 dark:text-gray-500">Carregando itens…</p>
-    if (!items || items.length === 0) {
-        return <p className="px-6 py-3 text-xs text-gray-400 dark:text-gray-500">Nenhum item cadastrado.</p>
-    }
 
     return (
         <div className="border-t border-gray-100 bg-gray-50 px-6 py-3 dark:border-gray-700 dark:bg-gray-800">
-            <ul className="space-y-2">
-                {items.map((item: ActionItem) => (
-                    <li key={item.id} className="flex items-center gap-3 text-sm">
-                        <input
-                            type="checkbox"
-                            checked={item.status === 'completed'}
-                            onChange={(e) => {
-                                void updateItem.mutateAsync({
-                                    id: item.id,
-                                    actionPlanId: planId,
-                                    payload: { status: e.target.checked ? 'completed' : 'in_progress' },
-                                })
-                            }}
-                            className="h-4 w-4 rounded border-gray-300 text-[#00A898] focus:ring-[#00A898]"
-                        />
-                        <span className={item.status === 'completed' ? 'line-through text-gray-400 dark:text-gray-600' : 'text-gray-700 dark:text-gray-300'}>
-                            {item.title}
-                        </span>
-                        {item.due_date && (
-                            <span className="ml-auto text-xs text-gray-400 dark:text-gray-500">{formatDate(item.due_date)}</span>
-                        )}
-                    </li>
-                ))}
-            </ul>
+            {items && items.length > 0 && (
+                <ul className="mb-2 space-y-2">
+                    {items.map((item: ActionItem) => (
+                        <li key={item.id} className="flex items-center gap-3 text-sm">
+                            <input
+                                type="checkbox"
+                                checked={item.status === 'completed'}
+                                onChange={(e) => {
+                                    void updateItem.mutateAsync({
+                                        id: item.id,
+                                        actionPlanId: planId,
+                                        payload: { status: e.target.checked ? 'completed' : 'in_progress' },
+                                    })
+                                }}
+                                className="h-4 w-4 rounded border-gray-300 text-[#00A898] focus:ring-[#00A898]"
+                            />
+                            <span className={item.status === 'completed' ? 'line-through text-gray-400 dark:text-gray-600' : 'text-gray-700 dark:text-gray-300'}>
+                                {item.title}
+                            </span>
+                            {item.due_date && (
+                                <span className="ml-auto text-xs text-gray-400 dark:text-gray-500">{formatDate(item.due_date)}</span>
+                            )}
+                        </li>
+                    ))}
+                </ul>
+            )}
+            {!items || items.length === 0 ? (
+                <p className="mb-2 text-xs text-gray-400 dark:text-gray-500">Nenhum item ainda.</p>
+            ) : null}
+            <AddItemForm planId={planId} />
         </div>
     )
 }
