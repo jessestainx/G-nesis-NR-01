@@ -67,4 +67,22 @@ export const pulseService = {
     async listResponses(surveyId: string): Promise<QueryListResult<PulseResponse>> {
         return pulseRepository.findResponses(surveyId)
     },
+
+    async deleteSurvey(
+        id: string,
+        orgId: string,
+        actorId: string,
+    ): Promise<{ error: string | null }> {
+        const result = await pulseRepository.deleteSurvey(id)
+        if (!result.error) {
+            await auditRepository.log({
+                userId: actorId,
+                action: 'pulse_survey.delete',
+                entityType: 'pulse_surveys',
+                entityId: id,
+                organizationId: orgId,
+            })
+        }
+        return result
+    },
 }

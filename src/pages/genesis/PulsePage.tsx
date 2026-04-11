@@ -6,6 +6,7 @@ import {
     useCreatePulseSurvey,
     useUpdateSurveyStatus,
     usePulseResponses,
+    useDeletePulseSurvey,
 } from '@/hooks/queries/usePulseSurveys'
 import { SectionLoader } from '@/components/ui/LoadingSpinner'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
@@ -35,7 +36,9 @@ interface SurveyRowProps { s: PulseSurvey; orgName: string }
 
 function SurveyRow({ s, orgName }: SurveyRowProps) {
     const updateStatus = useUpdateSurveyStatus()
+    const deleteSurvey = useDeletePulseSurvey()
     const [expanded, setExpanded] = useState(false)
+    const [confirmDel, setConfirmDel] = useState(false)
     const rate = responseRate(s)
 
     return (
@@ -83,6 +86,34 @@ function SurveyRow({ s, orgName }: SurveyRowProps) {
                                 className="flex items-center gap-1 rounded px-2 py-1 text-xs text-rose-600 hover:bg-rose-50 disabled:opacity-40">
                                 <Square size={12} />Encerrar
                             </button>
+                        )}
+                        {(s.status === 'draft' || s.status === 'closed') && (
+                            !confirmDel ? (
+                                <button
+                                    onClick={() => setConfirmDel(true)}
+                                    title="Excluir pesquisa"
+                                    className="rounded p-1 text-gray-300 hover:bg-red-50 hover:text-red-500">
+                                    <Trash2 size={13} />
+                                </button>
+                            ) : (
+                                <span className="flex items-center gap-1">
+                                    <span className="text-xs text-red-600">Excluir?</span>
+                                    <button
+                                        onClick={() => void deleteSurvey.mutateAsync({ id: s.id, orgId: s.organization_id })}
+                                        disabled={deleteSurvey.isPending}
+                                        className="rounded px-1.5 py-0.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-40">
+                                        Sim
+                                    </button>
+                                    <button onClick={() => setConfirmDel(false)}
+                                        className="text-xs text-gray-400 hover:text-gray-600">Não</button>
+                                </span>
+                            )
+                        )}
+                        {s.status === 'active' && (
+                            <span title="Feche a pesquisa antes de excluir"
+                                className="cursor-not-allowed rounded p-1 text-gray-200">
+                                <Trash2 size={13} />
+                            </span>
                         )}
                     </div>
                 </td>

@@ -98,3 +98,16 @@ export function useDeleteUnit() {
         onError: (e) => toast.error(e instanceof Error ? e.message : 'Erro ao excluir unidade'),
     })
 }
+
+export function useDeleteOrganization() {
+    const qc = useQueryClient()
+    const { user } = useAuth()
+    return useMutation({
+        mutationFn: (id: string) => organizationService.remove(id, user!.id),
+        onSuccess: () => {
+            void qc.invalidateQueries({ queryKey: orgKeys.lists() })
+            toast.success('Organização excluída com sucesso')
+        },
+        onError: (e: Error) => toast.error(e.message || 'Erro ao excluir organização'),
+    })
+}

@@ -122,3 +122,18 @@ export function useSubmitPulseResponse() {
         onError: (e: Error) => toast.error(e.message || 'Erro ao enviar resposta'),
     })
 }
+
+export function useDeletePulseSurvey() {
+    const qc = useQueryClient()
+    const { user } = useAuth()
+    return useMutation({
+        mutationFn: (vars: { id: string; orgId: string }) =>
+            pulseService.deleteSurvey(vars.id, vars.orgId, user!.id),
+        onSuccess: (_data: unknown, variables: { id: string; orgId: string }) => {
+            void qc.invalidateQueries({ queryKey: pulseKeys.list() })
+            void qc.invalidateQueries({ queryKey: pulseKeys.byOrg(variables.orgId) })
+            toast.success('Pesquisa excluída')
+        },
+        onError: (e: Error) => toast.error(e.message || 'Erro ao excluir pesquisa'),
+    })
+}

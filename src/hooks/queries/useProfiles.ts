@@ -58,3 +58,31 @@ export function useInviteUser() {
         onError: (e) => toast.error(e instanceof Error ? e.message : 'Erro ao convidar usuário'),
     })
 }
+
+export function useDeactivateUser() {
+    const qc = useQueryClient()
+    const { user } = useAuth()
+    return useMutation({
+        mutationFn: (userId: string) =>
+            profileService.deactivate(userId, user!.id),
+        onSuccess: () => {
+            void qc.invalidateQueries({ queryKey: profileKeys.all })
+            toast.success('Acesso do usuário desativado')
+        },
+        onError: (e: Error) => toast.error(e.message || 'Erro ao desativar usuário'),
+    })
+}
+
+export function useReactivateUser() {
+    const qc = useQueryClient()
+    const { user } = useAuth()
+    return useMutation({
+        mutationFn: (userId: string) =>
+            profileService.reactivate(userId, user!.id),
+        onSuccess: () => {
+            void qc.invalidateQueries({ queryKey: profileKeys.all })
+            toast.success('Acesso do usuário reativado')
+        },
+        onError: (e: Error) => toast.error(e.message || 'Erro ao reativar usuário'),
+    })
+}

@@ -74,6 +74,15 @@ export class PulseRepository extends BaseRepository<PulseSurvey> {
             .eq('survey_id', surveyId).order('submitted_at', { ascending: false })
         return { data: (data as PulseResponse[]) ?? [], error: formatError(error), count }
     }
+
+    async deleteSurvey(id: string): Promise<{ error: string | null }> {
+        const { error } = await db
+            .from('pulse_surveys')
+            .delete()
+            .eq('id', id)
+            .in('status', ['draft', 'closed'])
+        return { error: formatError(error) }
+    }
 }
 
 export const pulseRepository = new PulseRepository()

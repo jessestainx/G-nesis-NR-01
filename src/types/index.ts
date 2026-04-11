@@ -11,6 +11,7 @@ export interface Profile {
     role: UserRole
     organization_id: string | null
     avatar_url: string | null
+    active: boolean
     created_at: string
     updated_at: string
 }

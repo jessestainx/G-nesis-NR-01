@@ -1,8 +1,9 @@
 import { useState, useMemo } from 'react'
 import { z } from 'zod'
-import { Plus, X, UserPlus, Search } from 'lucide-react'
+import { Plus, X, UserPlus, Search, UserX, UserCheck, MoreHorizontal } from 'lucide-react'
 import type { Profile, UserRole } from '@/types'
-import { useOrganizationProfiles, useInviteUser } from '@/hooks/queries/useProfiles'
+import { useOrganizationProfiles, useInviteUser, useDeactivateUser, useReactivateUser } from '@/hooks/queries/useProfiles'
+import { useAuth } from '@/hooks/useAuth'
 import { useOrganizations } from '@/hooks/queries/useOrganizations'
 import { SectionLoader } from '@/components/ui/LoadingSpinner'
 import { Pagination } from '@/components/ui/Pagination'
@@ -122,24 +123,133 @@ function InviteModal({ onClose, orgId }: InviteModalProps) {
     )
 }
 
-// ─── Linha de usuário ─────────────────────────────────────────────────────────
+// ─── Modal confirmar desativação ─────────────────────────────────────────────
 
-function UserRow({ profile }: { profile: Profile }) {
+interface ConfirmDeactivateModalProps {
+    profile: Profile
+    onClose: () => void
+    onConfirm: () => void
+    isPending: boolean
+}
+
+function ConfirmDeactivateModal({ profile, onClose, onConfirm, isPending }: ConfirmDeactivateModalProps) {
     return (
-        <tr className="border-b border-gray-100 hover:bg-gray-50">
-            <td className="px-4 py-3 text-sm font-medium text-gray-900">{profile.name}</td>
-            <td className="px-4 py-3 text-sm text-gray-600">{profile.email}</td>
-            <td className="px-4 py-3">
-                <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${roleColor[profile.role]}`}>
-                    {roleLabel[profile.role] ?? profile.role}
-                </span>
-            </td>
-            <td className="px-4 py-3 text-sm text-gray-500">{formatDate(profile.created_at)}</td>
-        </tr>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <div className="w-full max-w-md rounded-xl bg-white shadow-xl">
+                <div className="flex items-center justify-between border-b px-6 py-4">
+                    <h2 className="text-base font-semibold text-gray-900">Desativar acesso</h2>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+                </div>
+                <div className="px-6 py-4 space-y-3">
+                    <p className="text-sm text-gray-700">
+                        Desativar <span className="font-semibold">{profile.name}</span>?
+                    </p>
+                    <p className="text-sm text-gray-500">
+                        O usuário perderá acesso imediatamente e não conseguirá fazer login.
+                        Os dados relacionados serão preservados.
+                    </p>
+                </div>
+                <div className="flex justify-end gap-2 border-t px-6 py-4">
+                    <button onClick={onClose}
+                        className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                        Cancelar
+                    </button>
+                    <button onClick={onConfirm} disabled={isPending}
+                        className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-700 disabled:opacity-50">
+                        <UserX size={14} />
+                        {isPending ? 'Desativando…' : 'Desativar acesso'}
+                    </button>
+                </div>
+            </div>
+        </div>
     )
 }
 
-function OrgUsersBlock({ orgId, orgName }: { orgId: string; orgName: string }) {
+// ─── Linha de usuário ─────────────────────────────────────────────────────────
+
+function UserRow({ profile, currentUserId }: { profile: Profile; currentUserId: string }) {
+    const deactivate = useDeactivateUser()
+    const reactivate = useReactivateUser()
+    const [showMenu, setShowMenu] = useState(false)
+    const [showConfirm, setShowConfirm] = useState(false)
+    const isSelf = profile.id === currentUserId
+    const isActive = profile.active !== false  // default true when field is missing
+
+    async function handleDeactivate() {
+        await deactivate.mutateAsync(profile.id)
+        setShowConfirm(false)
+    }
+
+    async function handleReactivate() {
+        await reactivate.mutateAsync(profile.id)
+        setShowMenu(false)
+    }
+
+    return (
+        <>
+            {showConfirm && (
+                <ConfirmDeactivateModal
+                    profile={profile}
+                    onClose={() => { setShowConfirm(false); setShowMenu(false) }}
+                    onConfirm={() => void handleDeactivate()}
+                    isPending={deactivate.isPending}
+                />
+            )}
+            <tr className="border-b border-gray-100 hover:bg-gray-50">
+                <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                    <span className="flex items-center gap-2">
+                        {profile.name}
+                        {!isActive && (
+                            <span className="rounded-full bg-gray-200 px-1.5 py-0.5 text-xs text-gray-500">Inativo</span>
+                        )}
+                    </span>
+                </td>
+                <td className="px-4 py-3 text-sm text-gray-600">{profile.email}</td>
+                <td className="px-4 py-3">
+                    <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${roleColor[profile.role]}`}>
+                        {roleLabel[profile.role] ?? profile.role}
+                    </span>
+                </td>
+                <td className="px-4 py-3 text-sm text-gray-500">{formatDate(profile.created_at)}</td>
+                <td className="px-4 py-3 text-right">
+                    {!isSelf && (
+                        <div className="relative inline-block">
+                            <button
+                                onClick={() => setShowMenu((v) => !v)}
+                                className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700">
+                                <MoreHorizontal size={15} />
+                            </button>
+                            {showMenu && (
+                                <>
+                                    <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)} />
+                                    <div className="absolute right-0 z-20 mt-1 w-48 rounded-lg border border-gray-200 bg-white shadow-lg">
+                                        {isActive ? (
+                                            <button
+                                                onClick={() => { setShowMenu(false); setShowConfirm(true) }}
+                                                className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50">
+                                                <UserX size={14} /> Desativar acesso
+                                            </button>
+                                        ) : (
+                                            <button
+                                                onClick={() => void handleReactivate()}
+                                                disabled={reactivate.isPending}
+                                                className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-green-700 hover:bg-green-50 disabled:opacity-40">
+                                                <UserCheck size={14} />
+                                                {reactivate.isPending ? 'Reativando…' : 'Reativar acesso'}
+                                            </button>
+                                        )}
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    )}
+                </td>
+            </tr>
+        </>
+    )
+}
+
+function OrgUsersBlock({ orgId, orgName, currentUserId }: { orgId: string; orgName: string; currentUserId: string }) {
     const { data: profiles, isLoading, error, refetch } = useOrganizationProfiles(orgId)
     const pg = usePagination(profiles, 10)
     const [inviting, setInviting] = useState(false)
@@ -170,10 +280,11 @@ function OrgUsersBlock({ orgId, orgName }: { orgId: string; orgName: string }) {
                                 <th className="px-4 py-2">E-mail</th>
                                 <th className="px-4 py-2">Papel</th>
                                 <th className="px-4 py-2">Criado em</th>
+                                <th className="px-4 py-2 w-10"></th>
                             </tr>
                         </thead>
                         <tbody>
-                            {pg.paged.map((p) => <UserRow key={p.id} profile={p} />)}
+                            {pg.paged.map((p) => <UserRow key={p.id} profile={p} currentUserId={currentUserId} />)}
                         </tbody>
                     </table>
                     <Pagination page={pg.page} pageSize={10} total={profiles?.length ?? 0} onPageChange={pg.goTo} />
@@ -186,6 +297,7 @@ function OrgUsersBlock({ orgId, orgName }: { orgId: string; orgName: string }) {
 // ─── Export ───────────────────────────────────────────────────────────────────
 
 export function UsersPage() {
+    const { user } = useAuth()
     const { data: orgs, isLoading, error, refetch } = useOrganizations()
     const [showInvite, setShowInvite] = useState(false)
     const [search, setSearch] = useState('')
@@ -237,7 +349,8 @@ export function UsersPage() {
                 ) : (
                     <div className="space-y-4">
                         {filteredOrgs.map((org) => (
-                            <OrgUsersBlock key={org.id} orgId={org.id} orgName={org.name} />
+                            <OrgUsersBlock key={org.id} orgId={org.id} orgName={org.name}
+                            currentUserId={user?.id ?? ""} />
                         ))}
                     </div>
                 )}

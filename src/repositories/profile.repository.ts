@@ -58,6 +58,34 @@ export class ProfileRepository extends BaseRepository<Profile> {
         })
         return { error: error?.message ?? null }
     }
+
+    async deactivate(userId: string): Promise<{ error: string | null }> {
+        const { error: profileError } = await db
+            .from('profiles')
+            .update({ active: false })
+            .eq('id', userId)
+        if (profileError) return { error: formatError(profileError) }
+
+        const { error: authError } = await supabase.auth.admin.updateUserById(
+            userId,
+            { ban_duration: '876600h' },
+        )
+        return { error: authError?.message ?? null }
+    }
+
+    async reactivate(userId: string): Promise<{ error: string | null }> {
+        const { error: profileError } = await db
+            .from('profiles')
+            .update({ active: true })
+            .eq('id', userId)
+        if (profileError) return { error: formatError(profileError) }
+
+        const { error: authError } = await supabase.auth.admin.updateUserById(
+            userId,
+            { ban_duration: 'none' },
+        )
+        return { error: authError?.message ?? null }
+    }
 }
 
 export const profileRepository = new ProfileRepository()

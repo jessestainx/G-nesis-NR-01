@@ -1,5 +1,6 @@
 import { organizationRepository } from '@/repositories/organization.repository'
 import { auditRepository } from '@/repositories/audit.repository'
+import { db } from '@/repositories/base.repository'
 import type { Organization, OrganizationUnit } from '@/types'
 import type { QueryListResult, QueryResult } from '@/repositories/base.repository'
 
@@ -68,5 +69,34 @@ export const organizationService = {
 
     async deleteUnit(id: string): Promise<{ error: string | null }> {
         return organizationRepository.deleteUnit(id)
+    },
+
+    async remove(
+        id: string,
+        actorId: string,
+    ): Promise<{ error: string | null }> {
+        // Guard: check for active users before deleting
+        const { data: users } = await db
+            .from('profiles')
+            .select('id')
+            .eq('organization_id', id)
+            .limit(1)
+
+        if (users && users.length > 0) {
+            return {
+                error: 'Não é possível excluir uma organização com usuários vinculados. Desative os usuários primeiro.',
+            }
+        }
+
+        const result = await organizationRepository.delete(id)
+        if (!result.error) {
+            await auditRepository.log({
+                userId: actorId,
+                action: 'organization.delete',
+                entityType: 'organizations',
+                entityId: id,
+            })
+        }
+        return result
     },
 }

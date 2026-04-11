@@ -1,11 +1,12 @@
 import { useState, useMemo } from 'react'
 import { z } from 'zod'
-import { Pencil, Plus, X, Search, Building2 } from 'lucide-react'
+import { Pencil, Plus, X, Search, Building2, Trash2 } from 'lucide-react'
 import type { Organization } from '@/types'
 import {
     useOrganizations,
     useCreateOrganization,
     useUpdateOrganization,
+    useDeleteOrganization,
 } from '@/hooks/queries/useOrganizations'
 import { SectionLoader } from '@/components/ui/LoadingSpinner'
 import { Pagination } from '@/components/ui/Pagination'
@@ -357,34 +358,107 @@ function OrgModal({ initial, onClose }: OrgModalProps) {
     )
 }
 
+// ─── Modal confirmar exclusão de organização ────────────────────────────────
+
+interface DeleteOrgModalProps { org: Organization; onClose: () => void }
+
+function DeleteOrgModal({ org, onClose }: DeleteOrgModalProps) {
+    const del = useDeleteOrganization()
+    const [confirm, setConfirm] = useState('')
+    const match = confirm === org.name
+
+    async function handleDelete() {
+        if (!match) return
+        const result = await del.mutateAsync(org.id)
+        if (!result?.error) onClose()
+    }
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <div className="w-full max-w-lg rounded-xl bg-white shadow-xl">
+                <div className="flex items-center justify-between border-b px-6 py-4">
+                    <h2 className="text-base font-semibold text-gray-900">Excluir organização</h2>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+                </div>
+                <div className="space-y-4 px-6 py-4">
+                    <div className="rounded-lg border border-red-200 bg-red-50 p-3">
+                        <p className="text-sm font-medium text-red-700">ATENÇÃO: Esta ação é irreversível.</p>
+                        <p className="mt-1 text-xs text-red-600">
+                            Todos os dados serão excluídos: diagnósticos, riscos, planos de ação,
+                            documentos e treinamentos.
+                        </p>
+                    </div>
+                    <div>
+                        <label className="mb-1.5 block text-sm text-gray-700">
+                            Para confirmar, digite o nome da organização:
+                            <span className="ml-1 font-semibold text-gray-900">{org.name}</span>
+                        </label>
+                        <input
+                            value={confirm}
+                            onChange={(e) => setConfirm(e.target.value)}
+                            placeholder="Digite o nome exato..."
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-400"
+                        />
+                    </div>
+                    {del.error instanceof Error && (
+                        <p className="text-xs text-red-600">{del.error.message}</p>
+                    )}
+                </div>
+                <div className="flex justify-end gap-2 border-t px-6 py-4">
+                    <button onClick={onClose}
+                        className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                        Cancelar
+                    </button>
+                    <button onClick={() => void handleDelete()} disabled={!match || del.isPending}
+                        className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-700 disabled:opacity-40">
+                        <Trash2 size={14} />
+                        {del.isPending ? 'Excluindo…' : 'Excluir permanentemente'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    )
+}
+
 // ─── Linha da tabela ──────────────────────────────────────────────────────────
 
 function OrgRow({ org, onEdit }: { org: Organization; onEdit: (o: Organization) => void }) {
+    const [showDelete, setShowDelete] = useState(false)
     return (
-        <tr className="border-b border-gray-100 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800/50">
-            <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">{org.name}</td>
-            <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{formatCnpj(org.cnpj)}</td>
-            <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{org.industry ?? '—'}</td>
-            <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{org.employee_count ?? '—'}</td>
-            <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                {org.plan ? planLabel[org.plan] : '—'}
-            </td>
-            <td className="px-4 py-3">
-                <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${statusColor[org.status]}`}>
-                    {statusLabel[org.status]}
-                </span>
-            </td>
-            <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{formatDate(org.created_at)}</td>
-            <td className="px-4 py-3">
-                <button
-                    onClick={() => onEdit(org)}
-                    className="rounded-md p-1.5 text-gray-400 hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-900/30 dark:hover:text-indigo-400"
-                    title="Editar"
-                >
-                    <Pencil className="h-4 w-4" />
-                </button>
-            </td>
-        </tr>
+        <>
+            {showDelete && <DeleteOrgModal org={org} onClose={() => setShowDelete(false)} />}
+            <tr className="border-b border-gray-100 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800/50">
+                <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">{org.name}</td>
+                <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{formatCnpj(org.cnpj)}</td>
+                <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{org.industry ?? '—'}</td>
+                <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{org.employee_count ?? '—'}</td>
+                <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                    {org.plan ? planLabel[org.plan] : '—'}
+                </td>
+                <td className="px-4 py-3">
+                    <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${statusColor[org.status]}`}>
+                        {statusLabel[org.status]}
+                    </span>
+                </td>
+                <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{formatDate(org.created_at)}</td>
+                <td className="px-4 py-3">
+                    <div className="flex items-center gap-1">
+                        <button
+                            onClick={() => onEdit(org)}
+                            className="rounded-md p-1.5 text-gray-400 hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-900/30 dark:hover:text-indigo-400"
+                            title="Editar">
+                            <Pencil className="h-4 w-4" />
+                        </button>
+                        <button
+                            onClick={() => setShowDelete(true)}
+                            className="rounded-md p-1.5 text-gray-300 hover:bg-red-50 hover:text-red-500"
+                            title="Excluir organização">
+                            <Trash2 className="h-4 w-4" />
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        </>
     )
 }
 

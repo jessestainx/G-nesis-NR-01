@@ -58,5 +58,37 @@ export const profileService = {
     }): Promise<{ error: string | null }> {
         return profileRepository.inviteUser(params)
     },
+
+    async deactivate(
+        userId: string,
+        actorId: string,
+    ): Promise<{ error: string | null }> {
+        const result = await profileRepository.deactivate(userId)
+        if (!result.error) {
+            await auditRepository.log({
+                userId: actorId,
+                action: 'user.deactivate',
+                entityType: 'profiles',
+                entityId: userId,
+            })
+        }
+        return result
+    },
+
+    async reactivate(
+        userId: string,
+        actorId: string,
+    ): Promise<{ error: string | null }> {
+        const result = await profileRepository.reactivate(userId)
+        if (!result.error) {
+            await auditRepository.log({
+                userId: actorId,
+                action: 'user.reactivate',
+                entityType: 'profiles',
+                entityId: userId,
+            })
+        }
+        return result
+    },
 }
 
