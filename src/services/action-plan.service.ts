@@ -8,6 +8,10 @@ export const actionPlanService = {
         return actionPlanRepository.findByOrganization(organizationId)
     },
 
+    async listAll(): Promise<QueryListResult<ActionPlan>> {
+        return actionPlanRepository.findAll()
+    },
+
     async listByStatus(
         organizationId: string,
         status: ActionPlan['status'],

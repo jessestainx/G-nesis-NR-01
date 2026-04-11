@@ -6,7 +6,19 @@ import type { Training } from '@/types'
 
 export const trainingKeys = {
     all: ['trainings'] as const,
+    list: () => [...trainingKeys.all, 'list'] as const,
     byOrg: (orgId: string) => [...trainingKeys.all, 'org', orgId] as const,
+}
+
+export function useAllTrainings() {
+    return useQuery({
+        queryKey: trainingKeys.list(),
+        queryFn: async () => {
+            const { data, error } = await trainingService.listAll()
+            if (error) throw new Error(error)
+            return data
+        },
+    })
 }
 
 export function useTrainings(organizationId: string) {

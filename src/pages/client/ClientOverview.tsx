@@ -7,7 +7,9 @@ import { useActionPlans } from '@/hooks/queries/useActionPlans'
 import { useDocuments } from '@/hooks/queries/useDocuments'
 import { SectionLoader } from '@/components/ui/LoadingSpinner'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
-import { Building2, ClipboardCheck, BadgeCheck, FileText } from 'lucide-react'
+import { useTrainings } from '@/hooks/queries/useTrainings'
+import { useActivePulseSurvey } from '@/hooks/queries/usePulseSurveys'
+import { Building2, ClipboardCheck, BadgeCheck, FileText, GraduationCap, Activity } from 'lucide-react'
 
 interface KpiCardProps {
     title: string
@@ -53,9 +55,12 @@ export function ClientOverview() {
     const diagnosesQuery = useDiagnoses(orgId)
     const plansQuery = useActionPlans(orgId)
     const docsQuery = useDocuments(orgId)
+    const trainingsQuery = useTrainings(orgId)
+    const activeSurveyQuery = useActivePulseSurvey(orgId)
 
     const isLoading =
-        orgQuery.isLoading || diagnosesQuery.isLoading || plansQuery.isLoading || docsQuery.isLoading
+        orgQuery.isLoading || diagnosesQuery.isLoading || plansQuery.isLoading ||
+        docsQuery.isLoading || trainingsQuery.isLoading
 
     if (isLoading) return <SectionLoader />
 
@@ -67,6 +72,9 @@ export function ClientOverview() {
     const activeDiagnoses = diagnoses.filter((d) => d.status === 'in_progress').length
     const pendingPlans = plans.filter((p) => p.status === 'pending' || p.status === 'in_progress').length
     const completedPlans = plans.filter((p) => p.status === 'completed').length
+    const trainings = trainingsQuery.data ?? []
+    const scheduledTrainings = trainings.filter((t) => t.status === 'scheduled').length
+    const activeSurvey = activeSurveyQuery.data
 
     return (
         <div className="space-y-6">
@@ -112,6 +120,22 @@ export function ClientOverview() {
                     value={org?.employee_count ?? '—'}
                     icon={Building2}
                     color="rose"
+                />
+                <KpiCard
+                    title="Treinamentos"
+                    value={trainings.length}
+                    subtitle={scheduledTrainings > 0 ? `${scheduledTrainings} agendados` : undefined}
+                    icon={GraduationCap}
+                    color="indigo"
+                    to="/dashboard/client/trainings"
+                />
+                <KpiCard
+                    title="Pesquisa de Pulso"
+                    value={activeSurvey ? 'Ativa' : 'Nenhuma'}
+                    subtitle={activeSurvey ? activeSurvey.title : undefined}
+                    icon={Activity}
+                    color={activeSurvey ? 'emerald' : 'amber'}
+                    to="/dashboard/client/pulse"
                 />
             </div>
 

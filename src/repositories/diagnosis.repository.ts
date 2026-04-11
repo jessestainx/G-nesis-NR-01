@@ -23,6 +23,14 @@ export class DiagnosisRepository extends BaseRepository<PsychosocialDiagnosis> {
             .order('created_at', { ascending: false })
         return { data: (data as PsychosocialDiagnosis[]) ?? [], error: formatError(error), count }
     }
+
+    async findAll(): Promise<QueryListResult<PsychosocialDiagnosis>> {
+        const { data, error, count } = await db
+            .from('psychosocial_diagnosis')
+            .select('*', { count: 'exact' })
+            .order('created_at', { ascending: false })
+        return { data: (data as PsychosocialDiagnosis[]) ?? [], error: formatError(error), count }
+    }
 }
 
 export class RiskRepository extends BaseRepository<PsychosocialRisk> {

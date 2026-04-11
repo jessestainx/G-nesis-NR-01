@@ -25,6 +25,7 @@ import { AuditPage } from '@/pages/genesis/AuditPage'
 import { PulsePage } from '@/pages/genesis/PulsePage'
 import { TrainingsPage } from '@/pages/genesis/TrainingsPage'
 import { MaturityPage } from '@/pages/genesis/MaturityPage'
+import { GenesisDocumentsPage } from '@/pages/genesis/GenesisDocumentsPage'
 import { OrgSettingsPage } from '@/pages/genesis/OrgSettingsPage'
 import { SystemStatusPage } from '@/pages/genesis/SystemStatusPage'
 
@@ -89,6 +90,7 @@ export default function App() {
                             <Route path="pulse" element={<PulsePage />} />
                             <Route path="trainings" element={<TrainingsPage />} />
                             <Route path="maturity" element={<MaturityPage />} />
+                            <Route path="documents" element={<GenesisDocumentsPage />} />
                             <Route path="org-settings" element={<OrgSettingsPage />} />
                             <Route path="system-status" element={<SystemStatusPage />} />
                             <Route path="profile" element={<ProfilePage />} />

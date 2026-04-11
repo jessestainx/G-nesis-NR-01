@@ -5,10 +5,14 @@ import {
     useActiveContracts,
 } from '@/hooks/queries/useFinance'
 import { useOrganizations } from '@/hooks/queries/useOrganizations'
+import { useAllDiagnoses } from '@/hooks/queries/useDiagnosis'
+import { useAllActionPlans } from '@/hooks/queries/useActionPlans'
+import { useAllPulseSurveys } from '@/hooks/queries/usePulseSurveys'
+import { useAllTrainings } from '@/hooks/queries/useTrainings'
 import { SectionLoader } from '@/components/ui/LoadingSpinner'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import { formatCurrency } from '@/utils/format'
-import { Building2, Users, FileCheck2, TrendingUp } from 'lucide-react'
+import { Building2, Users, FileCheck2, TrendingUp, ClipboardCheck, BadgeCheck, Activity, GraduationCap } from 'lucide-react'
 
 interface StatCardProps {
     title: string
@@ -70,12 +74,20 @@ export function GenesisOverview() {
     const contactsQuery = useCrmContacts()
     const contractsQuery = useActiveContracts()
     const orgsQuery = useOrganizations()
+    const diagnosesQuery = useAllDiagnoses()
+    const plansQuery = useAllActionPlans()
+    const surveysQuery = useAllPulseSurveys()
+    const trainingsQuery = useAllTrainings()
 
     const isLoading =
         financeSummary.isLoading ||
         contactsQuery.isLoading ||
         contractsQuery.isLoading ||
-        orgsQuery.isLoading
+        orgsQuery.isLoading ||
+        diagnosesQuery.isLoading ||
+        plansQuery.isLoading ||
+        surveysQuery.isLoading ||
+        trainingsQuery.isLoading
 
     const contacts = useMemo(() => contactsQuery.data ?? [], [contactsQuery.data])
     const contracts = useMemo(() => contractsQuery.data ?? [], [contractsQuery.data])
@@ -84,6 +96,16 @@ export function GenesisOverview() {
 
     // ─── Derived stats ────────────────────────────────────────────────────────
     const activeOrgs = organizations.filter((o) => o.status === 'active').length
+    const allDiagnoses = useMemo(() => diagnosesQuery.data ?? [], [diagnosesQuery.data])
+    const allPlans = useMemo(() => plansQuery.data ?? [], [plansQuery.data])
+    const allSurveys = useMemo(() => surveysQuery.data ?? [], [surveysQuery.data])
+    const allTrainings = useMemo(() => trainingsQuery.data ?? [], [trainingsQuery.data])
+
+    const activeDiagnoses = allDiagnoses.filter(d => d.status === 'in_progress').length
+    const pendingPlans = allPlans.filter(p => p.status === 'pending' || p.status === 'in_progress').length
+    const activeSurveys = allSurveys.filter(s => s.status === 'active').length
+    const scheduledTrainings = allTrainings.filter(t => t.status === 'scheduled').length
+
     const orgsByStatus = useMemo(() => {
         const map: Record<string, number> = {}
         for (const org of organizations) {
@@ -149,6 +171,38 @@ export function GenesisOverview() {
                     badge={`Líquido: ${formatCurrency(summary?.net)}`}
                     badgeColor={summary && summary.net >= 0 ? 'emerald' : 'rose'}
                     icon={TrendingUp}
+                />
+            </div>
+
+            {/* NR-01 KPI Cards */}
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <StatCard
+                    title="Diagnósticos ativos"
+                    value={activeDiagnoses}
+                    badge={`${allDiagnoses.length} total`}
+                    badgeColor="indigo"
+                    icon={ClipboardCheck}
+                />
+                <StatCard
+                    title="Planos em andamento"
+                    value={pendingPlans}
+                    badge={`${allPlans.length} total`}
+                    badgeColor="amber"
+                    icon={BadgeCheck}
+                />
+                <StatCard
+                    title="Pesquisas ativas"
+                    value={activeSurveys}
+                    badge={`${allSurveys.length} total`}
+                    badgeColor="emerald"
+                    icon={Activity}
+                />
+                <StatCard
+                    title="Treinamentos agendados"
+                    value={scheduledTrainings}
+                    badge={`${allTrainings.length} total`}
+                    badgeColor="rose"
+                    icon={GraduationCap}
                 />
             </div>
 

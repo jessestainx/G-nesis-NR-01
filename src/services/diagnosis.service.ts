@@ -10,6 +10,10 @@ export const diagnosisService = {
         return diagnosisRepository.findByOrganization(organizationId)
     },
 
+    async listAll(): Promise<QueryListResult<PsychosocialDiagnosis>> {
+        return diagnosisRepository.findAll()
+    },
+
     async listActive(organizationId: string): Promise<QueryListResult<PsychosocialDiagnosis>> {
         return diagnosisRepository.findActive(organizationId)
     },

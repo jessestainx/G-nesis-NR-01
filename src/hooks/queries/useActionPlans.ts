@@ -6,8 +6,20 @@ import type { ActionPlan, ActionItem } from '@/types'
 
 export const actionPlanKeys = {
     all: ['action-plans'] as const,
+    list: () => [...actionPlanKeys.all, 'list'] as const,
     byOrg: (orgId: string) => [...actionPlanKeys.all, 'org', orgId] as const,
     items: (apId: string) => [...actionPlanKeys.all, 'items', apId] as const,
+}
+
+export function useAllActionPlans() {
+    return useQuery({
+        queryKey: actionPlanKeys.list(),
+        queryFn: async () => {
+            const { data, error } = await actionPlanService.listAll()
+            if (error) throw new Error(error)
+            return data
+        },
+    })
 }
 
 export function useActionPlans(organizationId: string) {

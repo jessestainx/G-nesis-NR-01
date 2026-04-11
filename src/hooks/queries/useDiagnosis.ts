@@ -6,9 +6,21 @@ import type { PsychosocialDiagnosis, PsychosocialRisk } from '@/types'
 
 export const diagnosisKeys = {
     all: ['diagnoses'] as const,
+    list: () => [...diagnosisKeys.all, 'list'] as const,
     byOrg: (orgId: string) => [...diagnosisKeys.all, 'org', orgId] as const,
     detail: (id: string) => [...diagnosisKeys.all, 'detail', id] as const,
     risks: (orgId: string) => ['risks', 'org', orgId] as const,
+}
+
+export function useAllDiagnoses() {
+    return useQuery({
+        queryKey: diagnosisKeys.list(),
+        queryFn: async () => {
+            const { data, error } = await diagnosisService.listAll()
+            if (error) throw new Error(error)
+            return data
+        },
+    })
 }
 
 export function useDiagnoses(organizationId: string) {

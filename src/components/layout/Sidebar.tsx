@@ -31,6 +31,7 @@ const genesisNav: NavSection[] = [
         { label: "Planos de Ação", to: "/dashboard/genesis/action-plans", icon: BadgeCheck },
         { label: "Pesquisas de Pulso", to: "/dashboard/genesis/pulse", icon: Activity },
         { label: "Treinamentos", to: "/dashboard/genesis/trainings", icon: GraduationCap },
+        { label: "Documentos", to: "/dashboard/genesis/documents", icon: FileText },
         { label: "Maturidade NR-01", to: "/dashboard/genesis/maturity", icon: BarChart3 },
     ]},
     { title: "COMERCIAL", items: [

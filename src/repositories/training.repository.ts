@@ -13,6 +13,13 @@ export class TrainingRepository extends BaseRepository<Training> {
         return { data: (data as Training[]) ?? [], error: formatError(error), count }
     }
 
+    async findAll(): Promise<QueryListResult<Training>> {
+        const { data, error, count } = await db
+            .from('trainings').select('*', { count: 'exact' })
+            .order('scheduled_date', { ascending: false })
+        return { data: (data as Training[]) ?? [], error: formatError(error), count }
+    }
+
     async createTraining(
         payload: Omit<Training, 'id' | 'created_at'>,
     ): Promise<QueryResult<Training>> {

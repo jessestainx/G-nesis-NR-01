@@ -13,6 +13,13 @@ export class ActionPlanRepository extends BaseRepository<ActionPlan> {
         return { data: (data as ActionPlan[]) ?? [], error: formatError(error), count }
     }
 
+    async findAll(): Promise<QueryListResult<ActionPlan>> {
+        const { data, error, count } = await db
+            .from('action_plans').select('*', { count: 'exact' })
+            .order('created_at', { ascending: false })
+        return { data: (data as ActionPlan[]) ?? [], error: formatError(error), count }
+    }
+
     async findByStatus(
         organizationId: string,
         status: ActionPlan['status'],

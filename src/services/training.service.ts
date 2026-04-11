@@ -8,6 +8,10 @@ export const trainingService = {
         return trainingRepository.findByOrganization(organizationId)
     },
 
+    async listAll(): Promise<QueryListResult<Training>> {
+        return trainingRepository.findAll()
+    },
+
     async create(
         payload: Omit<Training, 'id' | 'created_at'>,
         actorId: string,
