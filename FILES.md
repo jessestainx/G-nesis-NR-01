@@ -205,7 +205,7 @@ Antes de fazer deploy, confirme:
 - [x] `public/favicon.svg` existe
 - [x] Scripts bash estão em `scripts/`
 - [x] Documentação completa criada
-- [ ] `bun.lockb` foi gerado (pendente: `bun install`)
+- [ ] `bun.lock` foi gerado (pendente: `bun install`)
 - [ ] Código foi commitado e enviado ao GitHub
 - [ ] Projetos Supabase criados
 - [ ] GitHub Secrets configurados

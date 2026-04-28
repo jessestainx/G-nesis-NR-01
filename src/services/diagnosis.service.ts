@@ -31,7 +31,7 @@ export const diagnosisService = {
             await auditRepository.log({
                 userId: actorId,
                 action: 'diagnosis.create',
-                entityType: 'psychosocial_diagnosis',
+                entityType: 'diagnoses',
                 entityId: result.data.id,
                 organizationId: result.data.organization_id,
             })
@@ -49,7 +49,7 @@ export const diagnosisService = {
             await auditRepository.log({
                 userId: actorId,
                 action: 'diagnosis.update',
-                entityType: 'psychosocial_diagnosis',
+                entityType: 'diagnoses',
                 entityId: id,
                 organizationId: result.data.organization_id,
             })
@@ -96,7 +96,7 @@ export const diagnosisService = {
             await auditRepository.log({
                 userId: actorId,
                 action: 'diagnosis.delete',
-                entityType: 'psychosocial_diagnosis',
+                entityType: 'diagnoses',
                 entityId: id,
                 organizationId,
             })
@@ -122,4 +122,3 @@ export const diagnosisService = {
         return result
     },
 }
-

@@ -244,10 +244,10 @@ else
     WARNINGS=$((WARNINGS + 1))
 fi
 
-if [ -f "bun.lockb" ]; then
-    echo -e "${GREEN}✓${NC} bun.lockb já existe"
+if [ -f "bun.lock" ] || [ -f "bun.lockb" ]; then
+    echo -e "${GREEN}✓${NC} lockfile do Bun já existe"
 else
-    echo -e "${YELLOW}⚠${NC} bun.lockb não existe (será gerado pelo deploy-helper.sh)"
+    echo -e "${YELLOW}⚠${NC} lockfile do Bun não existe (será gerado pelo deploy-helper.sh)"
     WARNINGS=$((WARNINGS + 1))
 fi
 

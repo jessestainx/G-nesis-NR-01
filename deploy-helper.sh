@@ -70,18 +70,18 @@ if [ $MISSING_DEPS -gt 0 ]; then
     exit 1
 fi
 
-# ─── ETAPA 2: Gerar bun.lockb ─────────────────────────────────────────────────
-print_step "Gerando bun.lockb..."
+# ─── ETAPA 2: Garantir lockfile do Bun ────────────────────────────────────────
+print_step "Verificando lockfile do Bun (bun.lock ou bun.lockb)..."
 echo ""
 
-if [ -f "bun.lockb" ]; then
-    print_warning "bun.lockb já existe. Pulando instalação."
+if [ -f "bun.lock" ] || [ -f "bun.lockb" ]; then
+    print_warning "Lockfile já existe. Pulando instalação."
 else
     bun install
-    if [ -f "bun.lockb" ]; then
-        print_success "bun.lockb gerado com sucesso"
+    if [ -f "bun.lock" ] || [ -f "bun.lockb" ]; then
+        print_success "Lockfile do Bun gerado com sucesso"
     else
-        print_error "Falha ao gerar bun.lockb"
+        print_error "Falha ao gerar lockfile do Bun"
         exit 1
     fi
 fi
@@ -180,10 +180,10 @@ echo "║               Resumo da Execução                         ║"
 echo "╚══════════════════════════════════════════════════════════╝"
 echo ""
 
-print_success "bun.lockb criado/verificado"
+print_success "Lockfile do Bun criado/verificado"
 print_success "Dependências instaladas"
 
-if git diff --cached --quiet && [ ! -f "bun.lockb" ]; then
+if git diff --cached --quiet && [ ! -f "bun.lock" ] && [ ! -f "bun.lockb" ]; then
     print_warning "Código não commitado ainda"
 else
     print_success "Código commitado"

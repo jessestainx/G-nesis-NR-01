@@ -24,7 +24,7 @@ No terminal da pasta do projeto:
 ```bash
 cd /home/genesis360care/htdocs/portal.genesis360care.com.br
 
-# Instalar dependências (gera bun.lockb)
+# Instalar dependências (gera bun.lock)
 bun install
 
 # Verificar arquivos modificados
@@ -40,7 +40,7 @@ git commit -m "feat: setup completo - migrations, CI/CD, scripts bash, vite-env.
 git push origin main
 ```
 
-**⚠️ IMPORTANTE:** Sem o `bun.lockb`, o CI vai falhar com erro `--frozen-lockfile requires bun.lockb`.
+**⚠️ IMPORTANTE:** Sem o `bun.lock`, o CI vai falhar com erro `--frozen-lockfile requires bun.lock`.
 
 ---
 
@@ -294,11 +294,11 @@ bun run supabase:create-admin:prod  # Criar admin (prod)
 
 ## 🆘 Troubleshooting
 
-### Erro: `bun.lockb not found`
+### Erro: `bun.lock not found`
 ```bash
 cd /home/genesis360care/htdocs/portal.genesis360care.com.br
 bun install
-git add bun.lockb
+git add bun.lock
 git commit -m "chore: add lockfile"
 git push
 ```

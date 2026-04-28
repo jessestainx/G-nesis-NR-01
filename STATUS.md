@@ -22,7 +22,7 @@ O código-fonte está completo e validado:
 ### ⏳ INFRAESTRUTURA: PENDENTE EXECUÇÃO MANUAL
 
 As seguintes tarefas requerem execução no terminal ou painéis web:
-1. Gerar `bun.lockb` e commitar
+1. Gerar `bun.lock` e commitar
 2. Criar projetos Supabase (dev/staging/prod)
 3. Configurar 9 GitHub Secrets
 4. Executar migrations no Supabase
@@ -77,9 +77,9 @@ As seguintes tarefas requerem execução no terminal ou painéis web:
 
 ### Infraestrutura (0/8 ⏳)
 
-- [ ] **bun.lockb** — Gerar via `bun install`
+- [ ] **bun.lock** — Gerar via `bun install`
   - Comando: `bun install`
-  - Arquivo esperado: `bun.lockb` (binário)
+  - Arquivo esperado: `bun.lock` (binário)
   - Status: PENDENTE execução
 
 - [ ] **Git Commit/Push** — Enviar código para GitHub
@@ -157,7 +157,7 @@ bash deploy-helper.sh      # Executar deploy
 
 O `deploy-helper.sh` vai:
 1. ✅ Verificar dependências (bun, git, supabase)
-2. ✅ Gerar `bun.lockb` via `bun install`
+2. ✅ Gerar `bun.lock` via `bun install`
 3. ✅ Fazer commit automático de todos os arquivos
 4. ✅ Oferecer fazer push para GitHub
 5. ✅ Guiar nas próximas etapas manuais

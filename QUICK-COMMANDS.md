@@ -121,9 +121,9 @@ STAGING_SERVER_PATH
 ## 🐛 Troubleshooting
 
 ```bash
-# Erro: bun.lockb not found
+# Erro: bun.lock not found
 bun install
-git add bun.lockb
+git add bun.lock
 git commit -m "chore: add lockfile"
 git push
 

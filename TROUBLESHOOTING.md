@@ -2,21 +2,21 @@
 
 ## 🚨 Problemas Comuns e Soluções
 
-### 1. CI/CD Falha: "bun.lockb not found"
+### 1. CI/CD Falha: "bun.lock not found"
 
 **Erro:**
 ```
 Error: Cannot find module 'bun install --frozen-lockfile'
 ```
 
-**Causa:** O `bun.lockb` não foi commitado no repositório.
+**Causa:** O `bun.lock` não foi commitado no repositório.
 
 **Solução:**
 ```bash
 cd /home/genesis360care/htdocs/portal.genesis360care.com.br
 bun install
-git add bun.lockb
-git commit -m "chore: add bun.lockb"
+git add bun.lock
+git commit -m "chore: add bun.lock"
 git push origin main
 ```
 

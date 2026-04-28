@@ -50,12 +50,12 @@ bun install
 echo -e "${GREEN}✓ Dependências instaladas${NC}"
 echo""
 
-# ─── ETAPA 4: Verificar bun.lockb ─────────────────────────────────────────────
-echo -e "${BLUE}[ 4/7 ] Verificando bun.lockb...${NC}"
-if [ -f "bun.lockb" ]; then
-    echo -e "${GREEN}✓ bun.lockb gerado${NC}"
+# ─── ETAPA 4: Verificar lockfile do Bun ───────────────────────────────────────
+echo -e "${BLUE}[ 4/7 ] Verificando lockfile do Bun (bun.lock ou bun.lockb)...${NC}"
+if [ -f "bun.lock" ] || [ -f "bun.lockb" ]; then
+    echo -e "${GREEN}✓ lockfile do Bun encontrado${NC}"
 else
-    echo -e "${RED}✗ bun.lockb não foi gerado${NC}"
+    echo -e "${RED}✗ lockfile do Bun não foi gerado${NC}"
     exit 1
 fi
 echo ""

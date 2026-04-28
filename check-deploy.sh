@@ -192,7 +192,7 @@ fi
 
 echo ""
 
-# ─── 6. Verificar bun.lockb no repositório ───────────────────────────────────
+# ─── 6. Verificar lockfile do Bun no repositório ─────────────────────────────
 echo -e "${BLUE}▶ Verificando repositório Git...${NC}"
 echo ""
 
@@ -200,11 +200,11 @@ PROJECT_DIR="/home/genesis360care/htdocs/${DOMAIN}"
 if [ -d "$PROJECT_DIR/.git" ]; then
     cd "$PROJECT_DIR"
     
-    # Verificar se bun.lockb está commitado
-    if git ls-files --error-unmatch bun.lockb &>/dev/null; then
-        echo -e "${GREEN}✓${NC} bun.lockb está commitado no Git"
+    # Verificar se o lockfile do Bun está commitado
+    if git ls-files --error-unmatch bun.lock &>/dev/null || git ls-files --error-unmatch bun.lockb &>/dev/null; then
+        echo -e "${GREEN}✓${NC} Lockfile do Bun está commitado no Git"
     else
-        echo -e "${YELLOW}⚠${NC} bun.lockb NÃO está commitado"
+        echo -e "${YELLOW}⚠${NC} Lockfile do Bun NÃO está commitado"
         WARNINGS=$((WARNINGS + 1))
     fi
     

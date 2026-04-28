@@ -9,7 +9,7 @@ bash one-click-deploy.sh
 Esse script executa automaticamente:
 1. ✅ Torna todos os scripts executáveis
 2. ✅ Valida estrutura do projeto
-3. ✅ Instala dependências (gera bun.lockb)
+3. ✅ Instala dependências (gera bun.lock)
 4. ✅ Faz commit de tudo
 5. ✅ Pergunta se quer fazer push
 6. ✅ Configura Nginx + SSL

@@ -3,11 +3,11 @@ import type { QueryListResult } from '@/repositories/base.repository'
 import type { PsychosocialDiagnosis, PsychosocialRisk } from '@/types'
 
 export class DiagnosisRepository extends BaseRepository<PsychosocialDiagnosis> {
-    constructor() { super('psychosocial_diagnosis') }
+    constructor() { super('diagnoses') }
 
     async findByOrganization(organizationId: string): Promise<QueryListResult<PsychosocialDiagnosis>> {
         const { data, error, count } = await db
-            .from('psychosocial_diagnosis')
+            .from('diagnoses')
             .select('*', { count: 'exact' })
             .eq('organization_id', organizationId)
             .order('created_at', { ascending: false })
@@ -16,7 +16,7 @@ export class DiagnosisRepository extends BaseRepository<PsychosocialDiagnosis> {
 
     async findActive(organizationId: string): Promise<QueryListResult<PsychosocialDiagnosis>> {
         const { data, error, count } = await db
-            .from('psychosocial_diagnosis')
+            .from('diagnoses')
             .select('*', { count: 'exact' })
             .eq('organization_id', organizationId)
             .in('status', ['draft', 'in_progress'])
@@ -26,7 +26,7 @@ export class DiagnosisRepository extends BaseRepository<PsychosocialDiagnosis> {
 
     async findAll(): Promise<QueryListResult<PsychosocialDiagnosis>> {
         const { data, error, count } = await db
-            .from('psychosocial_diagnosis')
+            .from('diagnoses')
             .select('*', { count: 'exact' })
             .order('created_at', { ascending: false })
         return { data: (data as PsychosocialDiagnosis[]) ?? [], error: formatError(error), count }

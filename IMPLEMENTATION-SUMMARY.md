@@ -273,7 +273,7 @@ export const env = {
 - ✅ Documentação completa de deploy
 
 ### Pendente (Execução Manual)
-- ⏳ Gerar `bun.lockb` via `bun install` (requer rede)
+- ⏳ Gerar `bun.lock` via `bun install` (requer rede)
 - ⏳ Criar 3 projetos no Supabase (dev/staging/prod)
 - ⏳ Preencher `.env.development`, `.env.staging`, `.env.production`
 - ⏳ Configurar 9 GitHub Secrets
@@ -311,7 +311,7 @@ export const env = {
 
 ## 📝 Notas para Próxima Sessão
 
-- Após execução de `bun install`, commitar `bun.lockb` imediatamente
+- Após execução de `bun install`, commitar `bun.lock` imediatamente
 - Testar workflows em branch `staging` antes de fazer merge para `main`
 - Validar que admin criado via `create-admin.sh` consegue logar
 - Configurar monitoramento de erros (Sentry?) pós-deploy
