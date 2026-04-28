@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { z } from 'zod'
 import { Plus, X, UserPlus, Search, UserX, UserCheck, MoreHorizontal, Pencil } from 'lucide-react'
 import type { Profile, UserRole } from '@/types'
-import { useOrganizationProfiles, useInviteUser, useDeactivateUser, useReactivateUser, useUpdateProfile } from '@/hooks/queries/useProfiles'
+import { useOrganizationProfiles, useInviteUser, useDeactivateUser, useReactivateUser, useUpdateProfile, usePendingInvites } from '@/hooks/queries/useProfiles'
 import { useAuth } from '@/hooks/useAuth'
 import { useOrganizations } from '@/hooks/queries/useOrganizations'
 import { SectionLoader } from '@/components/ui/LoadingSpinner'
@@ -37,6 +37,8 @@ function InviteModal({ onClose, orgId }: InviteModalProps) {
         organizationId: orgId ?? '',
     })
     const [fieldError, setFieldError] = useState<string | null>(null)
+    const [customMessage, setCustomMessage] = useState('')
+    const [sentState, setSentState] = useState<string | null>(null)
 
     function set<K extends keyof typeof form>(k: K, v: (typeof form)[K]) {
         setForm((f) => ({ ...f, [k]: v }))
@@ -56,7 +58,9 @@ function InviteModal({ onClose, orgId }: InviteModalProps) {
                 name: form.name.trim(),
                 role: form.role,
                 organizationId: form.organizationId || undefined,
+                message: customMessage.trim() || undefined,
             })
+            setSentState('Convite enviado - aguardando confirmação')
             onClose()
         } catch {
             // handled via invite.error
@@ -64,6 +68,7 @@ function InviteModal({ onClose, orgId }: InviteModalProps) {
     }
 
     const mutError = invite.error instanceof Error ? invite.error.message : null
+    const previewText = `Olá ${form.name || '[Nome]'}, você foi convidado para acessar o Portal Gênesis NR-01 como ${roleLabel[form.role] ?? form.role}.`
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
@@ -103,9 +108,25 @@ function InviteModal({ onClose, orgId }: InviteModalProps) {
                             </select>
                         </div>
                     )}
+                    <div>
+                        <label className="mb-1 block text-xs font-medium text-gray-700">Mensagem personalizada</label>
+                        <textarea
+                            value={customMessage}
+                            onChange={(e) => setCustomMessage(e.target.value)}
+                            rows={3}
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00A898]"
+                            placeholder="Mensagem opcional para aparecer no convite..."
+                        />
+                    </div>
+                    <div className="rounded-lg border border-indigo-100 bg-indigo-50 p-3 text-xs text-indigo-700">
+                        <p className="font-semibold">Preview do e-mail</p>
+                        <p className="mt-1">{previewText}</p>
+                        {customMessage.trim() && <p className="mt-1">Mensagem: {customMessage.trim()}</p>}
+                    </div>
                     {(fieldError ?? mutError) && (
                         <p className="text-xs text-red-600">{fieldError ?? mutError}</p>
                     )}
+                    {sentState && <p className="text-xs text-green-700">{sentState}</p>}
                     <div className="flex justify-end gap-2 pt-2">
                         <button type="button" onClick={onClose}
                             className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
@@ -118,6 +139,46 @@ function InviteModal({ onClose, orgId }: InviteModalProps) {
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+    )
+}
+
+function PendingInvitesBlock({ orgId }: { orgId: string }) {
+    const pending = usePendingInvites(orgId)
+    const resend = useInviteUser()
+
+    async function handleResend(email: string, name: string | null, role: UserRole) {
+        await resend.mutateAsync({
+            email,
+            name: name ?? 'Usuário',
+            role,
+            organizationId: orgId,
+        })
+    }
+
+    if (pending.isLoading) return null
+    if (!pending.data || pending.data.length === 0) return null
+
+    return (
+        <div className="border-t border-gray-200 px-4 py-3">
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-amber-700">Convites pendentes</h3>
+            <div className="space-y-2">
+                {pending.data.map((invite) => (
+                    <div key={invite.id} className="flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
+                        <div>
+                            <p className="text-sm font-medium text-amber-900">{invite.email}</p>
+                            <p className="text-xs text-amber-800">{roleLabel[invite.role] ?? invite.role} • {formatDate(invite.invited_at)}</p>
+                        </div>
+                        <button
+                            onClick={() => void handleResend(invite.email, invite.name, invite.role)}
+                            disabled={resend.isPending}
+                            className="rounded-md border border-amber-300 bg-white px-2.5 py-1 text-xs text-amber-800 hover:bg-amber-100 disabled:opacity-60"
+                        >
+                            {resend.isPending ? 'Reenviando…' : 'Reenviar'}
+                        </button>
+                    </div>
+                ))}
             </div>
         </div>
     )
@@ -373,6 +434,7 @@ function OrgUsersBlock({ orgId, orgName, currentUserId }: { orgId: string; orgNa
                     </table>
                     <Pagination page={pg.page} pageSize={10} total={profiles?.length ?? 0} onPageChange={pg.goTo} />
                 </div>
+                <PendingInvitesBlock orgId={orgId} />
             </div>
         </>
     )

@@ -16,6 +16,7 @@ import { DashboardRouter } from '@/pages/DashboardRouter'
 import { UnauthorizedPage } from '@/pages/UnauthorizedPage'
 import { GenesisOverview } from '@/pages/genesis/GenesisOverview'
 import { OrganizationsPage } from '@/pages/genesis/OrganizationsPage'
+import { OrganizationDetailPage } from '@/pages/genesis/OrganizationDetailPage'
 import { UsersPage } from '@/pages/genesis/UsersPage'
 import { CrmPage } from '@/pages/genesis/CrmPage'
 import { FinancePage } from '@/pages/genesis/FinancePage'
@@ -81,6 +82,7 @@ export default function App() {
                         >
                             <Route index element={<GenesisOverview />} />
                             <Route path="organizations" element={<OrganizationsPage />} />
+                            <Route path="organizations/:id" element={<OrganizationDetailPage />} />
                             <Route path="users" element={<UsersPage />} />
                             <Route path="diagnosis" element={<DiagnosisPage />} />
                             <Route path="action-plans" element={<ActionPlansPage />} />
@@ -158,4 +160,3 @@ export default function App() {
         </QueryClientProvider>
     )
 }
-

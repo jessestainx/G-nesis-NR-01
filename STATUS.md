@@ -1,6 +1,6 @@
 # Status do Projeto — Portal Gênesis NR-01
 
-**Data de atualização:** 2 de abril de 2026  
+**Data de atualização:** 28 de abril de 2026  
 **Repositório:** https://github.com/jessestainx/G-nesis-NR-01  
 **Branch:** main  
 **Versão:** 0.1.0  
@@ -18,16 +18,11 @@ O código-fonte está completo e validado:
 - TypeScript strict mode sem erros
 - Scripts de automação criados
 - Documentação completa
+- Onboarding: wizard de organização + página de detalhes + convites pendentes + adoção por organização
 
-### ⏳ INFRAESTRUTURA: PENDENTE EXECUÇÃO MANUAL
+### ✅ INFRAESTRUTURA: PRODUÇÃO ATIVA
 
-As seguintes tarefas requerem execução no terminal ou painéis web:
-1. Gerar `bun.lock` e commitar
-2. Criar projetos Supabase (dev/staging/prod)
-3. Configurar 9 GitHub Secrets
-4. Executar migrations no Supabase
-5. Criar usuário admin
-6. Setup do servidor (Nginx + SSL)
+Produção ativa com deploy automático via GitHub Actions, Supabase configurado e logins validados.
 
 ---
 

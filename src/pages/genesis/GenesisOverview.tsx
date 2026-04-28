@@ -4,7 +4,7 @@ import {
     useCrmContacts,
     useActiveContracts,
 } from '@/hooks/queries/useFinance'
-import { useOrganizations } from '@/hooks/queries/useOrganizations'
+import { useOrganizations, useOrgAdoptionStats } from '@/hooks/queries/useOrganizations'
 import { useAllDiagnoses } from '@/hooks/queries/useDiagnosis'
 import { useAllActionPlans } from '@/hooks/queries/useActionPlans'
 import { useAllPulseSurveys } from '@/hooks/queries/usePulseSurveys'
@@ -78,6 +78,7 @@ export function GenesisOverview() {
     const plansQuery = useAllActionPlans()
     const surveysQuery = useAllPulseSurveys()
     const trainingsQuery = useAllTrainings()
+    const adoptionQuery = useOrgAdoptionStats()
 
     const isLoading =
         financeSummary.isLoading ||
@@ -87,7 +88,8 @@ export function GenesisOverview() {
         diagnosesQuery.isLoading ||
         plansQuery.isLoading ||
         surveysQuery.isLoading ||
-        trainingsQuery.isLoading
+        trainingsQuery.isLoading ||
+        adoptionQuery.isLoading
 
     const contacts = useMemo(() => contactsQuery.data ?? [], [contactsQuery.data])
     const contracts = useMemo(() => contractsQuery.data ?? [], [contractsQuery.data])
@@ -100,6 +102,7 @@ export function GenesisOverview() {
     const allPlans = useMemo(() => plansQuery.data ?? [], [plansQuery.data])
     const allSurveys = useMemo(() => surveysQuery.data ?? [], [surveysQuery.data])
     const allTrainings = useMemo(() => trainingsQuery.data ?? [], [trainingsQuery.data])
+    const adoptionStats = useMemo(() => adoptionQuery.data ?? [], [adoptionQuery.data])
 
     const activeDiagnoses = allDiagnoses.filter(d => d.status === 'in_progress').length
     const pendingPlans = allPlans.filter(p => p.status === 'pending' || p.status === 'in_progress').length
@@ -260,6 +263,35 @@ export function GenesisOverview() {
                         })}
                     </ul>
                 </div>
+            </div>
+
+            <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+                <h2 className="mb-4 text-sm font-semibold text-gray-900 dark:text-white">
+                    Adoção por organização
+                </h2>
+                {adoptionStats.length === 0 ? (
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Sem dados de adoção disponíveis.</p>
+                ) : (
+                    <div className="space-y-2">
+                        {adoptionStats.slice(0, 6).map((item) => {
+                            const loginPct = item.total_users ? Math.round((item.users_logged_in / item.total_users) * 100) : 0
+                            const responsePct = item.total_users ? Math.round((item.users_with_responses / item.total_users) * 100) : 0
+                            return (
+                                <div key={item.organization_id} className="rounded-md border border-gray-100 px-3 py-2 text-sm dark:border-gray-800">
+                                    <div className="flex items-center justify-between">
+                                        <p className="font-medium text-gray-800 dark:text-gray-200">{item.name}</p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                                            Última atividade: {item.last_activity_at ? new Date(item.last_activity_at).toLocaleDateString('pt-BR') : '—'}
+                                        </p>
+                                    </div>
+                                    <p className="mt-1 text-xs text-gray-600 dark:text-gray-300">
+                                        Login: {loginPct}% • Resposta de pesquisa: {responsePct}% • Usuários: {item.total_users}
+                                    </p>
+                                </div>
+                            )
+                        })}
+                    </div>
+                )}
             </div>
         </div>
     )

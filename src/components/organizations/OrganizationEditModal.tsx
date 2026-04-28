@@ -1,44 +1,10 @@
-import { useState, useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { useState } from 'react'
 import { z } from 'zod'
-import { Pencil, Plus, X, Search, Building2, Trash2 } from 'lucide-react'
+import { X } from 'lucide-react'
 import type { Organization } from '@/types'
-import {
-    useOrganizations,
-    useCreateOrganization,
-    useUpdateOrganization,
-    useDeleteOrganization,
-} from '@/hooks/queries/useOrganizations'
-import { SectionLoader } from '@/components/ui/LoadingSpinner'
-import { Pagination } from '@/components/ui/Pagination'
-import { usePagination } from '@/hooks/usePagination'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
-import { EmptyState } from '@/components/ui/EmptyState'
-import { formatDate, formatCnpj } from '@/utils/format'
-import { cleanCnpj, validateCnpj, fetchCnpjData } from '@/utils/cnpj'
-import { NewOrgWizard } from '@/components/organizations/NewOrgWizard'
-
-// ─── Labels ───────────────────────────────────────────────────────────────────
-
-const statusLabel: Record<Organization['status'], string> = {
-    active: 'Ativo',
-    suspended: 'Suspenso',
-    inactive: 'Inativo',
-}
-
-const statusColor: Record<Organization['status'], string> = {
-    active: 'bg-green-100 text-green-700',
-    suspended: 'bg-yellow-100 text-yellow-700',
-    inactive: 'bg-gray-100 text-gray-500',
-}
-
-const planLabel: Record<string, string> = {
-    basic: 'Básico',
-    standard: 'Standard',
-    premium: 'Premium',
-}
-
-// ─── Tipos do formulário ──────────────────────────────────────────────────────
+import { cleanCnpj, fetchCnpjData, validateCnpj } from '@/utils/cnpj'
+import { useCreateOrganization, useUpdateOrganization } from '@/hooks/queries/useOrganizations'
 
 type FormValues = {
     name: string
@@ -65,8 +31,6 @@ const emptyForm: FormValues = {
     plan: 'basic',
     status: 'active',
 }
-
-// ─── Zod schema ───────────────────────────────────────────────────────────────
 
 const CNPJ_RE = /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/
 
@@ -106,16 +70,16 @@ function orgToForm(org: Organization): FormValues {
     }
 }
 
-// ─── Modal de criar / editar ──────────────────────────────────────────────────
-
-interface OrgModalProps {
+export function OrganizationEditModal({
+    initial,
+    onClose,
+}: {
     initial?: Organization | null
     onClose: () => void
-}
-
-function OrgModal({ initial, onClose }: OrgModalProps) {
+}) {
     const [form, setForm] = useState<FormValues>(initial ? orgToForm(initial) : emptyForm)
     const [errors, setErrors] = useState<OrgErrors>({})
+    const [submitError, setSubmitError] = useState<string | null>(null)
     const [cnpjLoading, setCnpjLoading] = useState(false)
     const [cnpjError, setCnpjError] = useState<string | null>(null)
     const [cnpjFound, setCnpjFound] = useState(false)
@@ -125,13 +89,12 @@ function OrgModal({ initial, onClose }: OrgModalProps) {
     const isLoading = createMut.isPending || updateMut.isPending
     const mutError = (createMut.error ?? updateMut.error) as Error | null
 
-    function set(field: keyof FormValues, value: string) {
+    function set<K extends keyof FormValues>(field: K, value: FormValues[K]) {
         setForm((f) => ({ ...f, [field]: value }))
         if (errors[field]) setErrors((e) => ({ ...e, [field]: undefined }))
     }
 
     async function handleCnpjChange(value: string) {
-        // Formatar enquanto digita
         const digits = cleanCnpj(value)
         let formatted = digits
         if (digits.length > 2) formatted = digits.slice(0, 2) + '.' + digits.slice(2)
@@ -159,7 +122,6 @@ function OrgModal({ initial, onClose }: OrgModalProps) {
             return
         }
 
-        // Preencher campos automaticamente (não sobrescrever se já preenchido)
         setForm((f) => ({
             ...f,
             name: f.name || data.razaoSocial || data.nomeFantasia || f.name,
@@ -172,6 +134,7 @@ function OrgModal({ initial, onClose }: OrgModalProps) {
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault()
+        setSubmitError(null)
         const result = orgSchema.safeParse(form)
         if (!result.success) {
             const fieldErrors: OrgErrors = {}
@@ -183,6 +146,7 @@ function OrgModal({ initial, onClose }: OrgModalProps) {
             return
         }
         setErrors({})
+
         const payload = {
             name: form.name.trim(),
             cnpj: form.cnpj.trim() || null,
@@ -195,6 +159,7 @@ function OrgModal({ initial, onClose }: OrgModalProps) {
             plan: (form.plan || null) as Organization['plan'],
             status: form.status,
         }
+
         try {
             if (initial) {
                 await updateMut.mutateAsync({ id: initial.id, payload })
@@ -202,15 +167,14 @@ function OrgModal({ initial, onClose }: OrgModalProps) {
                 await createMut.mutateAsync(payload)
             }
             onClose()
-        } catch {
-            // handled via mutError
+        } catch (e) {
+            setSubmitError(e instanceof Error ? e.message : 'Erro ao salvar organização')
         }
     }
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
             <div className="w-full max-w-lg rounded-xl bg-white shadow-xl dark:bg-gray-900">
-                {/* Header */}
                 <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4 dark:border-gray-800">
                     <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                         {initial ? 'Editar Organização' : 'Nova Organização'}
@@ -223,11 +187,9 @@ function OrgModal({ initial, onClose }: OrgModalProps) {
                     </button>
                 </div>
 
-                {/* Form */}
                 <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4 px-6 py-5">
-                    {mutError && (
-                        <ErrorMessage message={mutError?.message} />
-                    )}
+                    {mutError && <ErrorMessage message={mutError.message} />}
+                    {submitError && <ErrorMessage message={submitError} />}
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="col-span-2">
@@ -267,9 +229,7 @@ function OrgModal({ initial, onClose }: OrgModalProps) {
                                 )}
                             </div>
                             {errors.cnpj && <p className="mt-0.5 text-xs text-red-500">{errors.cnpj}</p>}
-                            {cnpjError && !errors.cnpj && (
-                                <p className="mt-1 text-xs text-red-500">{cnpjError}</p>
-                            )}
+                            {cnpjError && !errors.cnpj && <p className="mt-1 text-xs text-red-500">{cnpjError}</p>}
                             {cnpjFound && (
                                 <p className="mt-1 text-xs text-green-600 dark:text-green-400">
                                     Dados preenchidos automaticamente pela Receita Federal
@@ -367,7 +327,6 @@ function OrgModal({ initial, onClose }: OrgModalProps) {
                         </div>
                     </div>
 
-                    {/* Footer */}
                     <div className="flex justify-end gap-3 pt-2">
                         <button
                             type="button"
@@ -386,216 +345,6 @@ function OrgModal({ initial, onClose }: OrgModalProps) {
                     </div>
                 </form>
             </div>
-        </div>
-    )
-}
-
-// ─── Modal confirmar exclusão de organização ────────────────────────────────
-
-interface DeleteOrgModalProps { org: Organization; onClose: () => void }
-
-function DeleteOrgModal({ org, onClose }: DeleteOrgModalProps) {
-    const del = useDeleteOrganization()
-    const [confirm, setConfirm] = useState('')
-    const match = confirm === org.name
-
-    async function handleDelete() {
-        if (!match) return
-        const result = await del.mutateAsync(org.id)
-        if (!result?.error) onClose()
-    }
-
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-            <div className="w-full max-w-lg rounded-xl bg-white shadow-xl">
-                <div className="flex items-center justify-between border-b px-6 py-4">
-                    <h2 className="text-base font-semibold text-gray-900">Excluir organização</h2>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
-                </div>
-                <div className="space-y-4 px-6 py-4">
-                    <div className="rounded-lg border border-red-200 bg-red-50 p-3">
-                        <p className="text-sm font-medium text-red-700">ATENÇÃO: Esta ação é irreversível.</p>
-                        <p className="mt-1 text-xs text-red-600">
-                            Todos os dados serão excluídos: diagnósticos, riscos, planos de ação,
-                            documentos e treinamentos.
-                        </p>
-                    </div>
-                    <div>
-                        <label className="mb-1.5 block text-sm text-gray-700">
-                            Para confirmar, digite o nome da organização:
-                            <span className="ml-1 font-semibold text-gray-900">{org.name}</span>
-                        </label>
-                        <input
-                            value={confirm}
-                            onChange={(e) => setConfirm(e.target.value)}
-                            placeholder="Digite o nome exato..."
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-400"
-                        />
-                    </div>
-                    {del.error instanceof Error && (
-                        <p className="text-xs text-red-600">{del.error.message}</p>
-                    )}
-                </div>
-                <div className="flex justify-end gap-2 border-t px-6 py-4">
-                    <button onClick={onClose}
-                        className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                        Cancelar
-                    </button>
-                    <button onClick={() => void handleDelete()} disabled={!match || del.isPending}
-                        className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-700 disabled:opacity-40">
-                        <Trash2 size={14} />
-                        {del.isPending ? 'Excluindo…' : 'Excluir permanentemente'}
-                    </button>
-                </div>
-            </div>
-        </div>
-    )
-}
-
-// ─── Linha da tabela ──────────────────────────────────────────────────────────
-
-function OrgRow({ org, onEdit }: { org: Organization; onEdit: (o: Organization) => void }) {
-    const [showDelete, setShowDelete] = useState(false)
-    return (
-        <>
-            {showDelete && <DeleteOrgModal org={org} onClose={() => setShowDelete(false)} />}
-            <tr className="border-b border-gray-100 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800/50">
-                <td className="px-4 py-3 text-sm font-medium">
-                    <Link to={`/dashboard/genesis/organizations/${org.id}`} className="text-gray-900 hover:text-indigo-600 dark:text-white dark:hover:text-indigo-300">
-                        {org.name}
-                    </Link>
-                </td>
-                <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{formatCnpj(org.cnpj)}</td>
-                <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{org.industry ?? '—'}</td>
-                <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{org.employee_count ?? '—'}</td>
-                <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                    {org.plan ? planLabel[org.plan] : '—'}
-                </td>
-                <td className="px-4 py-3">
-                    <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${statusColor[org.status]}`}>
-                        {statusLabel[org.status]}
-                    </span>
-                </td>
-                <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{formatDate(org.created_at)}</td>
-                <td className="px-4 py-3">
-                    <div className="flex items-center gap-1">
-                        <button
-                            onClick={() => onEdit(org)}
-                            className="rounded-md p-1.5 text-gray-400 hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-900/30 dark:hover:text-indigo-400"
-                            title="Editar">
-                            <Pencil className="h-4 w-4" />
-                        </button>
-                        <button
-                            onClick={() => setShowDelete(true)}
-                            className="rounded-md p-1.5 text-gray-300 hover:bg-red-50 hover:text-red-500"
-                            title="Excluir organização">
-                            <Trash2 className="h-4 w-4" />
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        </>
-    )
-}
-
-// ─── Página principal ─────────────────────────────────────────────────────────
-
-export function OrganizationsPage() {
-    const { data: orgs, isLoading, error, refetch } = useOrganizations()
-    const [search, setSearch] = useState('')
-    const filtered = useMemo(() => {
-        if (!orgs) return []
-        const q = search.toLowerCase()
-        if (!q) return orgs
-        return orgs.filter((o) =>
-            o.name.toLowerCase().includes(q) ||
-            (o.cnpj ?? '').includes(q) ||
-            (o.industry ?? '').toLowerCase().includes(q)
-        )
-    }, [orgs, search])
-    const pg = usePagination(filtered, 15)
-    const [createOpen, setCreateOpen] = useState(false)
-    const [editOrg, setEditOrg] = useState<Organization | null>(null)
-
-    function openCreate() { setCreateOpen(true) }
-    function openEdit(org: Organization) { setEditOrg(org) }
-    function closeEditModal() { setEditOrg(null) }
-
-    if (isLoading) return <SectionLoader />
-    if (error) {
-        return (
-            <ErrorMessage
-                message={error instanceof Error ? error.message : 'Erro ao carregar organizações'}
-                onRetry={() => void refetch()}
-            />
-        )
-    }
-
-    return (
-        <div className="space-y-6 p-6">
-            {createOpen && <NewOrgWizard onClose={() => setCreateOpen(false)} />}
-            {editOrg && <OrgModal initial={editOrg} onClose={closeEditModal} />}
-
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Organizações</h1>
-                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                        {orgs?.length ?? 0} organização(ões) cadastrada(s)
-                    </p>
-                </div>
-                <button
-                    onClick={openCreate}
-                    className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
-                >
-                    <Plus className="h-4 w-4" />
-                    Nova organização
-                </button>
-            </div>
-
-            {/* Busca */}
-            <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                <input
-                    type="text"
-                    placeholder="Buscar por nome, CNPJ ou setor…"
-                    value={search}
-                    onChange={(e) => { setSearch(e.target.value); pg.goTo(1) }}
-                    className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                />
-            </div>
-
-            {!orgs || orgs.length === 0 ? (
-                <EmptyState
-                    icon={Building2}
-                    title="Nenhuma organização cadastrada"
-                    description="Crie a primeira organização para começar"
-                    actionLabel="Nova organização"
-                    onAction={openCreate}
-                />
-            ) : (
-                <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-                    <table className="w-full text-left">
-                        <thead className="border-b border-gray-200 bg-gray-50 text-xs uppercase text-gray-500 dark:border-gray-800 dark:bg-gray-800 dark:text-gray-400">
-                            <tr>
-                                <th className="px-4 py-3">Nome</th>
-                                <th className="px-4 py-3">CNPJ</th>
-                                <th className="px-4 py-3">Setor</th>
-                                <th className="px-4 py-3">Funcionários</th>
-                                <th className="px-4 py-3">Plano</th>
-                                <th className="px-4 py-3">Status</th>
-                                <th className="px-4 py-3">Criado em</th>
-                                <th className="px-4 py-3">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {pg.paged.map((org) => (
-                                <OrgRow key={org.id} org={org} onEdit={openEdit} />
-                            ))}
-                        </tbody>
-                    </table>
-                    <Pagination page={pg.page} pageSize={15} total={filtered.length} onPageChange={pg.goTo} />
-                </div>
-            )}
         </div>
     )
 }

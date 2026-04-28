@@ -1,6 +1,6 @@
 import { db, BaseRepository, formatError } from '@/repositories/base.repository'
 import type { QueryResult, QueryListResult } from '@/repositories/base.repository'
-import type { Organization, OrganizationUnit } from '@/types'
+import type { OrgAdoptionStats, Organization, OrganizationUnit } from '@/types'
 
 export class OrganizationRepository extends BaseRepository<Organization> {
     constructor() {
@@ -61,6 +61,14 @@ export class OrganizationRepository extends BaseRepository<Organization> {
     async deleteUnit(id: string): Promise<{ error: string | null }> {
         const { error } = await db.from('organization_units').delete().eq('id', id)
         return { error: formatError(error) }
+    }
+
+    async findAdoptionStats(): Promise<QueryListResult<OrgAdoptionStats>> {
+        const { data, error, count } = await db
+            .from('org_adoption_stats')
+            .select('*', { count: 'exact' })
+            .order('name')
+        return { data: (data as OrgAdoptionStats[]) ?? [], error: formatError(error), count }
     }
 }
 

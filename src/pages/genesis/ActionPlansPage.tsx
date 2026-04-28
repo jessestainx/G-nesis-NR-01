@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Plus, X, ChevronDown, ChevronRight, PlayCircle, CheckCircle2, XCircle } from 'lucide-react'
 import type { ActionPlan, ActionItem } from '@/types'
 import { useOrganizations } from '@/hooks/queries/useOrganizations'
@@ -363,8 +364,12 @@ function OrgActionPlansBlock({ orgId, orgName }: { orgId: string; orgName: strin
 
 export function ActionPlansPage() {
     const { data: orgs, isLoading, error, refetch } = useOrganizations()
+    const [params] = useSearchParams()
+    const orgId = params.get('orgId') ?? ''
     if (isLoading) return <SectionLoader />
     if (error) return <ErrorMessage message={error instanceof Error ? error.message : 'Erro'} onRetry={() => void refetch()} />
+
+    const list = orgId ? (orgs ?? []).filter((o) => o.id === orgId) : (orgs ?? [])
 
     return (
         <div className="space-y-6 p-6">
@@ -378,7 +383,7 @@ export function ActionPlansPage() {
                 <EmptyState icon={ClipboardList} title="Nenhuma organização cadastrada" />
             ) : (
                 <div className="space-y-6">
-                    {orgs.map((org) => <OrgActionPlansBlock key={org.id} orgId={org.id} orgName={org.name} />)}
+                    {list.map((org) => <OrgActionPlansBlock key={org.id} orgId={org.id} orgName={org.name} />)}
                 </div>
             )}
         </div>

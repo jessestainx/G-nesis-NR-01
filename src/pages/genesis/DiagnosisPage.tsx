@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Plus, X, Search, Printer, Trash2 } from 'lucide-react'
 import type { PsychosocialDiagnosis, PsychosocialRisk } from '@/types'
 import { DiagnosisReport } from '@/components/DiagnosisReport'
@@ -290,13 +291,16 @@ function OrgDiagnosisBlock({ orgId, orgName }: { orgId: string; orgName: string 
 export function DiagnosisPage() {
     const { data: orgs, isLoading, error, refetch } = useOrganizations()
     const [search, setSearch] = useState('')
+    const [params] = useSearchParams()
+    const orgId = params.get('orgId') ?? ''
 
     const filteredOrgs = useMemo(() => {
         if (!orgs) return []
+        if (orgId) return orgs.filter((o) => o.id === orgId)
         const q = search.trim().toLowerCase()
         if (!q) return orgs
         return orgs.filter((o) => o.name.toLowerCase().includes(q))
-    }, [orgs, search])
+    }, [orgs, search, orgId])
 
     if (isLoading) return <SectionLoader />
     if (error) return <ErrorMessage message={error instanceof Error ? error.message : 'Erro'} onRetry={() => void refetch()} />

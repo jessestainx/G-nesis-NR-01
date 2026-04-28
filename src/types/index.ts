@@ -25,6 +25,8 @@ export interface Organization {
     employee_count: number | null
     responsible_name: string | null
     responsible_email: string | null
+    responsible_phone: string | null
+    responsible_role: string | null
     plan: 'basic' | 'standard' | 'premium' | null
     status: 'active' | 'suspended' | 'inactive'
     created_at: string
@@ -207,6 +209,25 @@ export interface AuditLog {
     entity_id: string | null
     metadata: Record<string, unknown> | null
     created_at: string
+}
+
+export interface PendingInvite {
+    id: string
+    email: string
+    invited_at: string
+    name: string | null
+    role: UserRole
+    organization_id: string
+}
+
+export interface OrgAdoptionStats {
+    organization_id: string
+    name: string
+    status: Organization['status']
+    total_users: number
+    users_logged_in: number
+    users_with_responses: number
+    last_activity_at: string | null
 }
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────

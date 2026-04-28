@@ -1,7 +1,7 @@
 import { organizationRepository } from '@/repositories/organization.repository'
 import { auditRepository } from '@/repositories/audit.repository'
 import { db } from '@/repositories/base.repository'
-import type { Organization, OrganizationUnit } from '@/types'
+import type { OrgAdoptionStats, Organization, OrganizationUnit } from '@/types'
 import type { QueryListResult, QueryResult } from '@/repositories/base.repository'
 
 export const organizationService = {
@@ -52,6 +52,10 @@ export const organizationService = {
 
     async listUnits(organizationId: string): Promise<QueryListResult<OrganizationUnit>> {
         return organizationRepository.findUnits(organizationId)
+    },
+
+    async listAdoptionStats(): Promise<QueryListResult<OrgAdoptionStats>> {
+        return organizationRepository.findAdoptionStats()
     },
 
     async createUnit(

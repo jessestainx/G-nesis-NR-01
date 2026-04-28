@@ -2,7 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { organizationService } from '@/services/organization.service'
 import { useAuth } from '@/hooks/useAuth'
-import type { Organization, OrganizationUnit } from '@/types'
+import type { OrgAdoptionStats, Organization, OrganizationUnit } from '@/types'
+import type { QueryListResult } from '@/repositories/base.repository'
 
 // ─── Query key factory ────────────────────────────────────────────────────────
 
@@ -12,6 +13,7 @@ export const orgKeys = {
     list: (status?: string) => [...orgKeys.lists(), { status }] as const,
     detail: (id: string) => [...orgKeys.all, 'detail', id] as const,
     units: (orgId: string) => [...orgKeys.all, 'units', orgId] as const,
+    adoptionStats: () => [...orgKeys.all, 'adoption-stats'] as const,
 }
 
 // ─── Queries ──────────────────────────────────────────────────────────────────
@@ -38,6 +40,14 @@ export function useOrganizationUnits(organizationId: string) {
         queryKey: orgKeys.units(organizationId),
         queryFn: () => organizationService.listUnits(organizationId),
         enabled: !!organizationId,
+        select: (res) => res.data,
+    })
+}
+
+export function useOrgAdoptionStats() {
+    return useQuery<QueryListResult<OrgAdoptionStats>, Error, OrgAdoptionStats[]>({
+        queryKey: orgKeys.adoptionStats(),
+        queryFn: () => organizationService.listAdoptionStats(),
         select: (res) => res.data,
     })
 }

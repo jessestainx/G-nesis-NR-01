@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase'
 import { db, BaseRepository, formatError } from '@/repositories/base.repository'
 import type { QueryResult, QueryListResult } from '@/repositories/base.repository'
-import type { Profile, UserRole } from '@/types'
+import type { PendingInvite, Profile, UserRole } from '@/types'
 
 export class ProfileRepository extends BaseRepository<Profile> {
     constructor() {
@@ -48,15 +48,26 @@ export class ProfileRepository extends BaseRepository<Profile> {
         name: string
         role: UserRole
         organizationId?: string
+        message?: string
     }): Promise<{ error: string | null }> {
         const { error } = await supabase.auth.admin.inviteUserByEmail(params.email, {
             data: {
                 name: params.name,
                 role: params.role,
                 organization_id: params.organizationId ?? null,
+                invite_message: params.message ?? null,
             },
         })
         return { error: error?.message ?? null }
+    }
+
+    async findPendingInvites(organizationId: string): Promise<QueryListResult<PendingInvite>> {
+        const { data, error, count } = await db
+            .from('pending_invites')
+            .select('*', { count: 'exact' })
+            .eq('organization_id', organizationId)
+            .order('invited_at', { ascending: false })
+        return { data: (data as PendingInvite[]) ?? [], error: formatError(error), count }
     }
 
     async deactivate(userId: string): Promise<{ error: string | null }> {

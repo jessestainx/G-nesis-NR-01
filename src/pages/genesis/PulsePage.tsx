@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Plus, X, Play, Square, BarChart2, ChevronDown, ChevronRight, Trash2 } from 'lucide-react'
 import { useOrganizations } from '@/hooks/queries/useOrganizations'
 import {
@@ -230,14 +231,14 @@ const DEFAULT_QUESTIONS: PulseQuestion[] = [
     { id: 'q5', text: 'Comentários adicionais (opcional):', type: 'text' },
 ]
 
-interface NewSurveyModalProps { onClose: () => void }
+interface NewSurveyModalProps { onClose: () => void; initialOrgId?: string }
 
-function NewSurveyModal({ onClose }: NewSurveyModalProps) {
+function NewSurveyModal({ onClose, initialOrgId }: NewSurveyModalProps) {
     const { data: orgs } = useOrganizations()
     const create = useCreatePulseSurvey()
 
     const [title, setTitle] = useState('')
-    const [orgId, setOrgId] = useState('')
+    const [orgId, setOrgId] = useState(initialOrgId ?? '')
     const [questions, setQuestions] = useState<PulseQuestion[]>(DEFAULT_QUESTIONS)
     const [newQ, setNewQ] = useState('')
     const [newQType, setNewQType] = useState<PulseQuestion['type']>('scale')
@@ -375,15 +376,18 @@ export function PulsePage() {
     const { data: surveys, isLoading, error, refetch } = useAllPulseSurveys()
     const { data: orgs } = useOrganizations()
     const [showModal, setShowModal] = useState(false)
+    const [params] = useSearchParams()
+    const orgId = params.get('orgId') ?? ''
 
     const orgMap = Object.fromEntries((orgs ?? []).map((o) => [o.id, o.name]))
 
     if (isLoading) return <SectionLoader />
     if (error) return <ErrorMessage message="Erro ao carregar pesquisas" onRetry={() => void refetch()} />
 
-    const active = surveys?.filter((s) => s.status === 'active') ?? []
-    const draft = surveys?.filter((s) => s.status === 'draft') ?? []
-    const closed = surveys?.filter((s) => s.status === 'closed') ?? []
+    const list = orgId ? (surveys ?? []).filter((s) => s.organization_id === orgId) : (surveys ?? [])
+    const active = list.filter((s) => s.status === 'active')
+    const draft = list.filter((s) => s.status === 'draft')
+    const closed = list.filter((s) => s.status === 'closed')
 
     return (
         <div className="space-y-6 p-6">
@@ -417,7 +421,7 @@ export function PulsePage() {
                 ))}
             </div>
 
-            {!surveys || surveys.length === 0 ? (
+            {!surveys || list.length === 0 ? (
                 <div className="rounded-lg border border-dashed border-gray-300 p-12 text-center dark:border-gray-700">
                     <BarChart2 className="mx-auto mb-3 h-8 w-8 text-gray-300" />
                     <p className="text-sm text-gray-500">Nenhuma pesquisa criada.</p>
@@ -436,7 +440,7 @@ export function PulsePage() {
                             </tr>
                         </thead>
                         <tbody>
-                            {surveys.map((s) => (
+                            {list.map((s) => (
                                 <SurveyRow key={s.id} s={s} orgName={orgMap[s.organization_id] ?? '—'} />
                             ))}
                         </tbody>
@@ -444,7 +448,7 @@ export function PulsePage() {
                 </div>
             )}
 
-            {showModal && <NewSurveyModal onClose={() => setShowModal(false)} />}
+            {showModal && <NewSurveyModal onClose={() => setShowModal(false)} initialOrgId={orgId || undefined} />}
         </div>
     )
 }

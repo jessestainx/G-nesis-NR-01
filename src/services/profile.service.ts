@@ -1,6 +1,6 @@
 import { profileRepository } from '@/repositories/profile.repository'
 import { auditRepository } from '@/repositories/audit.repository'
-import type { Profile, UserRole } from '@/types'
+import type { PendingInvite, Profile, UserRole } from '@/types'
 import type { QueryListResult, QueryResult } from '@/repositories/base.repository'
 
 export const profileService = {
@@ -55,8 +55,24 @@ export const profileService = {
         name: string
         role: UserRole
         organizationId?: string
+        message?: string
+        actorId: string
     }): Promise<{ error: string | null }> {
-        return profileRepository.inviteUser(params)
+        const result = await profileRepository.inviteUser(params)
+        if (!result.error) {
+            await auditRepository.log({
+                userId: params.actorId,
+                action: 'user.invite',
+                entityType: 'profiles',
+                organizationId: params.organizationId,
+                metadata: { email: params.email, role: params.role },
+            })
+        }
+        return result
+    },
+
+    async listPendingInvites(organizationId: string): Promise<QueryListResult<PendingInvite>> {
+        return profileRepository.findPendingInvites(organizationId)
     },
 
     async deactivate(
@@ -91,4 +107,3 @@ export const profileService = {
         return result
     },
 }
-

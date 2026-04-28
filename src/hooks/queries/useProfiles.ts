@@ -2,13 +2,15 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { profileService } from '@/services/profile.service'
 import { useAuth } from '@/hooks/useAuth'
-import type { Profile, UserRole } from '@/types'
+import type { PendingInvite, Profile, UserRole } from '@/types'
+import type { QueryListResult } from '@/repositories/base.repository'
 
 export const profileKeys = {
     all: ['profiles'] as const,
     detail: (id: string) => [...profileKeys.all, 'detail', id] as const,
     byOrg: (orgId: string) => [...profileKeys.all, 'org', orgId] as const,
     byRole: (role: UserRole) => [...profileKeys.all, 'role', role] as const,
+    pendingInvites: (orgId: string) => [...profileKeys.all, 'pending-invites', orgId] as const,
 }
 
 export function useProfile(id: string) {
@@ -45,17 +47,33 @@ export function useUpdateProfile() {
 }
 
 export function useInviteUser() {
+    const { user } = useAuth()
+    const qc = useQueryClient()
     return useMutation({
         mutationFn: (params: {
             email: string
             name: string
             role: UserRole
             organizationId?: string
-        }) => profileService.invite(params),
-        onSuccess: () => {
+            message?: string
+        }) => profileService.invite({ ...params, actorId: user!.id }),
+        onSuccess: (_data, variables) => {
+            if (variables.organizationId) {
+                qc.invalidateQueries({ queryKey: profileKeys.pendingInvites(variables.organizationId) })
+                qc.invalidateQueries({ queryKey: profileKeys.byOrg(variables.organizationId) })
+            }
             toast.success('Convite enviado com sucesso. O usuário deve verificar o e-mail.')
         },
         onError: (e) => toast.error(e instanceof Error ? e.message : 'Erro ao convidar usuário'),
+    })
+}
+
+export function usePendingInvites(organizationId: string) {
+    return useQuery<QueryListResult<PendingInvite>, Error, PendingInvite[]>({
+        queryKey: profileKeys.pendingInvites(organizationId),
+        queryFn: () => profileService.listPendingInvites(organizationId),
+        enabled: !!organizationId,
+        select: (res) => res.data,
     })
 }
 
